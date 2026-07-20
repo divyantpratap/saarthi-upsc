@@ -1,0 +1,21 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+chroma_db/
+data/raw/
+*.log
+logs/
+ingest_log.txt
+build_rag_log.txt
+.DS_Store
+.pytest_cache/
+
+# Copyrighted source material and large/derived data (never publish these)
+data/pdfs/
+data/scraped/
+data/embeddings/
+*.jpeg
+*.jpg
+.fuse_hidden*

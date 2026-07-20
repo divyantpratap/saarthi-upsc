@@ -1,0 +1,12 @@
+services:
+  upsc-ai:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./logs:/app/logs
+    restart: unless-stopped

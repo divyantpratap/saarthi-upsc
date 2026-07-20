@@ -1,0 +1,2 @@
+# One UPSC-relevant URL per line (comments and blanks ignored)
+https://www.pib.gov.in/PressReleasePage.aspx?PRID=2012345

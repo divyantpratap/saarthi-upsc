@@ -1,0 +1,12 @@
+# Railway configuration for Saarthi.
+# Railway will use the Dockerfile in this repo to build the image.
+
+[build]
+builder = "dockerfile"
+
+[deploy]
+# Streamlit exposes its own health endpoint.
+healthcheckPath = "/_stcore/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

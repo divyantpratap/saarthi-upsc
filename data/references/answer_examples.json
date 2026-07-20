@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "description": "One-shot answer style references for UPSC Prep AI — mimic structure, not copy facts blindly.",
+  "examples": [
+    {
+      "id": "definition_prelims",
+      "types": ["direct", "definition"],
+      "match": ["what is", "define", "meaning of", "article \\d+", "who is", "full form"],
+      "question": "What is Article 32 of the Indian Constitution?",
+      "answer": "### Article 32 — Right to Constitutional Remedies\n\n**Definition:** Article 32 guarantees the right to move the Supreme Court for enforcement of Fundamental Rights (Part III).\n\n**Key points:**\n- Dr. B.R. Ambedkar called it the **\"heart of the Constitution\"**.\n- It is itself a Fundamental Right (not merely a legal remedy).\n- SC can issue writs: *habeas corpus, mandamus, prohibition, certiorari, quo warranto*.\n\n**Prelims pointers:**\n- Part III → Articles 12–35\n- Article 32 ↔ writ jurisdiction of SC; Article 226 ↔ High Courts\n\n**Source:** Cite the bracketed study material used, e.g. [1]."
+    },
+    {
+      "id": "compare_mains",
+      "types": ["compare", "rag", "hybrid"],
+      "match": ["compare", "contrast", "difference between", "distinguish", "similarit"],
+      "question": "Compare Fundamental Rights and Directive Principles of State Policy (DPSP).",
+      "answer": "### Fundamental Rights (FR) vs DPSP\n\n| Aspect | Fundamental Rights (Part III) | DPSP (Part IV) |\n|--------|------------------------------|----------------|\n| Nature | Justiciable; enforceable in courts | Non-justiciable; moral/political obligations |\n| Purpose | Protect individuals from state excess | Guide state policy for social/economic justice |\n| Origin | Borrowed from US Bill of Rights | Inspired by Irish Constitution |\n| Amendment | Some via Article 368; basic structure applies | Can be amended by ordinary process largely |\n\n**Similarity:** Both aim at justice and dignity; FR + DPSP together reflect the Constitution's philosophy (see *Minerva Mills*, balance).\n\n**Mains line:** FRs are brakes on state power; DPSPs are accelerators toward welfare — complementary, not antagonistic.\n\n**Sources:** [1], [2] from retrieved material."
+    },
+    {
+      "id": "list_prelims",
+      "types": ["direct", "list"],
+      "match": ["list", "enumerate", "name the", "how many types"],
+      "question": "List the types of emergencies under the Indian Constitution.",
+      "answer": "### Emergency Provisions (Part XVIII)\n\n1. **National Emergency** — Article **352** (war, external aggression, armed rebellion)\n2. **State Emergency (President's Rule)** — Article **356** (failure of constitutional machinery in states)\n3. **Financial Emergency** — Article **360** (threat to financial stability/credit of India)\n\n**Prelims traps:**\n- Only **352** declared thrice (1962, 1971, 1975)\n- **360** never proclaimed in practice\n- 44th Amendment tightened grounds/procedure for 352\n\n**Source:** [1]"
+    },
+    {
+      "id": "analyse_mains",
+      "types": ["rag", "analyse"],
+      "match": ["analyse", "analyze", "discuss", "critically", "evaluate", "comment"],
+      "question": "Discuss the significance of Panchayati Raj in Indian democracy.",
+      "answer": "### Significance of Panchayati Raj\n\n**Introduction:** 73rd Constitutional Amendment Act (1992) constitutionalised local self-government in rural areas.\n\n**Body:**\n1. **Democratic decentralisation** — Gram Sabha, three-tier structure (village–block–district)\n2. **Social justice** — Reservation for SC/ST/women in PRIs\n3. **Service delivery** — Agriculture, health, sanitation closer to citizens\n4. **Limitations** — Funds/functions/functionaries deficits; state-level variations; elite capture\n\n**Conclusion:** PRIs strengthen participatory democracy but need fiscal empowerment and capacity building.\n\n**Mains value-add:** Link to Article 40 (DPSP), 11th Schedule subjects.\n\n**Sources:** [1], [2]"
+    },
+    {
+      "id": "current_affairs",
+      "types": ["hybrid", "current"],
+      "match": ["recent", "current", "latest", "2024", "2025", "2026"],
+      "question": "How should I link a current affairs topic to static syllabus for Mains?",
+      "answer": "### Linking Current Affairs to Static Syllabus\n\n**Structure:**\n1. **One-line context** (what happened)\n2. **Static anchor** (Article / scheme / committee / geography concept)\n3. **Issues/challenges** (2–3 bullets)\n4. **Way forward / government steps**\n5. **Optional:** Committee/report (e.g. ARC, NITI) if relevant\n\n**Example frame:** Topic → Polity (federalism) / Economy (fiscal) / IR (neighbourhood) / Environment (Convention)\n\n**Prelims:** Fact + map + ministry + report name\n**Mains:** Multi-dimensional, balanced conclusion\n\nUse only facts supported by your study material; flag if CA detail is missing from sources."
+    }
+  ]
+}
