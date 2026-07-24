@@ -1,0 +1,2 @@
+# Runtime packages for Streamlit Community Cloud (optional apt deps)
+# Keep empty unless native libs are required.

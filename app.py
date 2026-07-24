@@ -13,6 +13,10 @@ ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 load_dotenv()
 
+from src.core.secrets import apply_streamlit_secrets
+
+apply_streamlit_secrets()
+
 from settings import GEMINI_MODEL
 from src.core.health import check_health
 from src.core.logging_config import setup_logging
@@ -23,6 +27,22 @@ from src.ui.sessions import active_session, delete_session, init_sessions, new_s
 
 setup_logging()
 st.set_page_config(page_title="Saarthi — UPSC AI", page_icon="◉", layout="wide", initial_sidebar_state="expanded")
+
+
+def ensure_demo_index() -> None:
+    """On Streamlit Cloud, auto-build a tiny public notes index if chroma is empty."""
+    if get_collection_count() > 0:
+        return
+    if not os.getenv("GEMINI_API_KEY"):
+        return
+    os.environ.setdefault("EMBEDDING_BACKEND", "gemini")
+    try:
+        from scripts.build_demo_index import build_demo_index
+
+        with st.spinner("Building the public demo knowledge base (one-time)…"):
+            build_demo_index(reset=True)
+    except Exception as exc:
+        st.warning(f"Demo index not ready yet: {exc}")
 
 STARTERS = {
     "Prelims drill": "Create 5 UPSC Prelims MCQs on Fundamental Rights. Ask one at a time and explain every option.",
@@ -122,6 +142,7 @@ def render_composer(mode: str) -> str | None:
 
 
 styles()
+ensure_demo_index()
 init_sessions()
 session = active_session()
 
@@ -189,7 +210,7 @@ if session["messages"]:
 prompt = st.session_state.pop("pending_prompt", None) or prompt
 if prompt:
     if not check_health().api_key_set:
-        st.error("Add GEMINI_API_KEY to your .env file to start asking questions.")
+        st.error("Add GEMINI_API_KEY in Streamlit secrets (or local .env) to start asking questions.")
         st.stop()
     update_session_title(session, prompt)
     session["messages"].append({"role": "user", "content": prompt})
