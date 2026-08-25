@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 from rank_bm25 import BM25Okapi
 
@@ -97,7 +96,9 @@ def lookup_direct(query: str, top_k: int = 3) -> list[dict]:
     for i, e in enumerate(entries):
         blob = (e["subject"] + " " + e["filename"] + " " + e.get("keywords", "")).lower()
         overlap = sum(1 for t in q_tokens if t in blob and len(t) > 3)
-        scores[i] += overlap * 0.8
+        content_tokens = set(corpus[i])
+        content_overlap = sum(1 for t in set(q_tokens) if len(t) > 3 and t in content_tokens)
+        scores[i] += overlap * 0.8 + content_overlap
     ranked = sorted(zip(entries, scores), key=lambda x: x[1], reverse=True)[:top_k]
     return [
         {

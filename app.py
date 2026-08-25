@@ -182,7 +182,13 @@ with st.sidebar:
     except Exception:
         count = 0
     catalog = load_catalog()
-    st.markdown(f'<div class="index-card"><span class="index-dot"></span><b>Knowledge base ready</b><br>{catalog.get("count",0)} sources · {count:,} passages indexed</div>', unsafe_allow_html=True)
+    detail = f'{catalog.get("count", 0)} public source' + ('s' if catalog.get("count", 0) != 1 else '')
+    if count:
+        detail += f' · {count:,} passages indexed'
+    st.markdown(
+        f'<div class="index-card"><span class="index-dot"></span><b>Source catalog ready</b><br>{detail}</div>',
+        unsafe_allow_html=True,
+    )
     with st.expander("API key & privacy"):
         st.caption(
             "Optional: use your own Gemini key. It stays only in this browser "
@@ -203,15 +209,18 @@ with st.sidebar:
         else:
             st.caption("Using the protected server key when available.")
         st.caption("Do not submit personal, confidential, or account information.")
-    with st.expander("Library management"):
+    with st.expander("Workspace settings"):
         st.caption(f"Answer model: {GEMINI_MODEL}")
-        if st.button("Rebuild source catalog", use_container_width=True):
-            build_catalog(); st.rerun()
-        if st.button("Re-index exact passages", use_container_width=True):
-            from src.ingest.build_store import build_vector_store
-            with st.spinner("Reading and indexing your library…"):
-                build_vector_store(reset=True)
-            index_count.clear(); st.rerun()
+        if os.getenv("ENABLE_LIBRARY_ADMIN", "").lower() == "true":
+            if st.button("Rebuild source catalog", use_container_width=True):
+                build_catalog(); st.rerun()
+            if st.button("Re-index exact passages", use_container_width=True):
+                from src.ingest.build_store import build_vector_store
+                with st.spinner("Reading and indexing your library…"):
+                    build_vector_store(reset=True)
+                index_count.clear(); st.rerun()
+        else:
+            st.caption("Library administration is disabled on the public demo.")
         if st.button("Delete this chat", use_container_width=True):
             delete_session(session["id"]); st.session_state.pop("bot_session_id", None); st.rerun()
 
