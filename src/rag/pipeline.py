@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from settings import DIRECT_EXCERPT_CHARS, TOP_K_DIRECT, TOP_K_RAG
 from src.core.gemini import GeminiError
 from src.core.logging_config import log
-from src.ingest.build_store import get_chroma_collection, get_collection_count
+from src.ingest.build_store import get_collection_count
 from src.rag.generator import generate_answer
 from src.rag.retriever import format_context_block, retrieve_context
 from src.rag.router import route_question
@@ -41,7 +41,13 @@ class UPSCChatbot:
             lines.append(f"Assistant: {a[:800]}")
         return "\n".join(lines)
 
-    def ask(self, question: str, guidance: str | None = None) -> dict:
+    def ask(
+        self,
+        question: str,
+        guidance: str | None = None,
+        *,
+        api_key: str | None = None,
+    ) -> dict:
         t0 = time.perf_counter()
         question = question.strip()
         if not question:
@@ -107,6 +113,7 @@ class UPSCChatbot:
                     context_block,
                     mode=mode,
                     history=self._history_text() or None,
+                    api_key=api_key,
                 )
             except GeminiError as exc:
                 # Retrieval remains useful during transient model outages. Never

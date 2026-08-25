@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import time
-from functools import lru_cache
 
 from dotenv import load_dotenv
 from google import genai
@@ -36,13 +35,18 @@ class GeminiError(Exception):
     pass
 
 
-@lru_cache(maxsize=1)
-def get_client() -> genai.Client:
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+def get_client(api_key: str | None = None) -> genai.Client:
+    """Create a Gemini client without retaining user-supplied credentials.
+
+    ``api_key`` is deliberately not cached: a key entered in the Streamlit UI
+    must remain scoped to that browser session and must never be copied into a
+    process-wide environment variable or shared client.
+    """
+    resolved_key = (api_key or os.getenv("GEMINI_API_KEY", "")).strip()
+    if not resolved_key:
         raise GeminiError("GEMINI_API_KEY not set. Copy .env.example to .env")
     return genai.Client(
-        api_key=api_key,
+        api_key=resolved_key,
         http_options=types.HttpOptions(timeout=GEMINI_TIMEOUT_MS),
     )
 
@@ -75,9 +79,10 @@ def generate_text(
     temperature: float = 0.25,
     max_tokens: int | None = None,
     retries: int = 1,
+    api_key: str | None = None,
 ) -> str:
     prompt = prompt[:MAX_CONTEXT_CHARS + 5000]  # hard cap on prompt size
-    client = get_client()
+    client = get_client(api_key)
     config = types.GenerateContentConfig(
         temperature=temperature,
         max_output_tokens=max_tokens or MAX_OUTPUT_TOKENS,
@@ -126,10 +131,15 @@ def generate_text(
     raise GeminiError(str(last_err) if last_err else "Generation failed")
 
 
-def embed_texts(texts: list[str], task_type: str = "RETRIEVAL_DOCUMENT") -> list[list[float]]:
+def embed_texts(
+    texts: list[str],
+    task_type: str = "RETRIEVAL_DOCUMENT",
+    *,
+    api_key: str | None = None,
+) -> list[list[float]]:
     if not texts:
         return []
-    client = get_client()
+    client = get_client(api_key)
     result = client.models.embed_content(
         model=GEMINI_EMBED_MODEL,
         contents=texts,

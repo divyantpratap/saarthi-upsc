@@ -27,8 +27,11 @@ class HealthReport:
         }
 
 
-def check_health() -> HealthReport:
-    report = HealthReport(ok=True, api_key_set=bool(os.getenv("GEMINI_API_KEY")))
+def check_health(*, user_api_key: str | None = None) -> HealthReport:
+    report = HealthReport(
+        ok=True,
+        api_key_set=bool((user_api_key or "").strip() or os.getenv("GEMINI_API_KEY")),
+    )
 
     if not report.api_key_set:
         report.errors.append("GEMINI_API_KEY missing in .env")

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from settings import MAX_CONTEXT_DIRECT, MAX_CONTEXT_RAG
-from src.core.gemini import GeminiError, SYSTEM_INSTRUCTION, generate_text
+from src.core.gemini import SYSTEM_INSTRUCTION, GeminiError, generate_text
 from src.core.logging_config import log
 from src.rag.retriever import format_context_block
 from src.references.answer_style import get_answer_examples
@@ -52,6 +52,7 @@ def generate_answer(
     context_block: str,
     mode: str = "rag",
     history: str | None = None,
+    api_key: str | None = None,
 ) -> str:
     cap = MAX_CONTEXT_DIRECT if mode == "direct" else MAX_CONTEXT_RAG
     if len(context_block) > cap:
@@ -64,7 +65,12 @@ def generate_answer(
     prompt = history_block + _build_prompt(user_query, context_block, mode)
 
     try:
-        return generate_text(prompt, system=SYSTEM_INSTRUCTION, temperature=0.25)
+        return generate_text(
+            prompt,
+            system=SYSTEM_INSTRUCTION,
+            temperature=0.25,
+            api_key=api_key,
+        )
     except GeminiError as exc:
         log.error("Generation failed: %s", exc)
         # Retry once with half context
@@ -78,6 +84,7 @@ def generate_answer(
                     history_block + _build_prompt(user_query, short_ctx, mode),
                     system=SYSTEM_INSTRUCTION,
                     temperature=0.2,
+                    api_key=api_key,
                 )
             except GeminiError:
                 pass

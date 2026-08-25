@@ -2,7 +2,7 @@
 
 A study assistant for UPSC aspirants that answers from real source material instead of guessing. Ask a question and it pulls the relevant passages from a study library, then writes a grounded answer in the mode you need (Learn, Prelims, Mains, or Evaluate).
 
-> Live demo: [Streamlit Community Cloud — link after deploy](https://share.streamlit.io)
+> Live demo: deploy target `https://saarthi-upsc.streamlit.app`
 
 ## Why I built it
 
@@ -58,6 +58,15 @@ GEMINI_API_KEY = "your_key"
 EMBEDDING_BACKEND = "gemini"
 GEMINI_MODEL = "gemini-2.5-flash"
 ```
+
+### API-key safety
+
+- The protected deployment key is stored only in Streamlit secrets.
+- Visitors may optionally enter their own Gemini key in a password-masked field.
+- Visitor keys remain in that Streamlit browser session and are passed directly
+  to the Gemini client; they are never copied into environment variables,
+  written to disk, included in chat history, or logged.
+- **Forget my API key** clears the visitor key from the active session.
 
 ## Tests
 

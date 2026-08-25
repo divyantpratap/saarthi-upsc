@@ -23,7 +23,16 @@ from src.core.logging_config import setup_logging
 from src.ingest.build_store import get_collection_count
 from src.rag.pipeline import UPSCChatbot
 from src.references.catalog import build_catalog, load_catalog
-from src.ui.sessions import active_session, delete_session, init_sessions, new_session, session_list, switch_session, touch_session, update_session_title
+from src.ui.sessions import (
+    active_session,
+    delete_session,
+    init_sessions,
+    new_session,
+    session_list,
+    switch_session,
+    touch_session,
+    update_session_title,
+)
 
 setup_logging()
 st.set_page_config(page_title="Saarthi — UPSC AI", page_icon="◉", layout="wide", initial_sidebar_state="expanded")
@@ -141,6 +150,12 @@ def render_composer(mode: str) -> str | None:
     return question.strip() if submitted and question.strip() else None
 
 
+def user_api_key() -> str | None:
+    """Return the current browser session's optional BYOK credential."""
+    value = st.session_state.get("byok_gemini_api_key", "")
+    return value.strip() or None
+
+
 styles()
 ensure_demo_index()
 init_sessions()
@@ -168,6 +183,26 @@ with st.sidebar:
         count = 0
     catalog = load_catalog()
     st.markdown(f'<div class="index-card"><span class="index-dot"></span><b>Knowledge base ready</b><br>{catalog.get("count",0)} sources · {count:,} passages indexed</div>', unsafe_allow_html=True)
+    with st.expander("API key & privacy"):
+        st.caption(
+            "Optional: use your own Gemini key. It stays only in this browser "
+            "session, is password-masked, and is never written to disk or logs."
+        )
+        st.text_input(
+            "Gemini API key",
+            type="password",
+            key="byok_gemini_api_key",
+            placeholder="AIza…",
+            help="Leave blank to use the demo's server-side key.",
+        )
+        if user_api_key():
+            st.success("Using your session-only API key.")
+            if st.button("Forget my API key", use_container_width=True):
+                st.session_state.pop("byok_gemini_api_key", None)
+                st.rerun()
+        else:
+            st.caption("Using the protected server key when available.")
+        st.caption("Do not submit personal, confidential, or account information.")
     with st.expander("Library management"):
         st.caption(f"Answer model: {GEMINI_MODEL}")
         if st.button("Rebuild source catalog", use_container_width=True):
@@ -209,8 +244,9 @@ if session["messages"]:
     prompt = render_composer(mode)
 prompt = st.session_state.pop("pending_prompt", None) or prompt
 if prompt:
-    if not check_health().api_key_set:
-        st.error("Add GEMINI_API_KEY in Streamlit secrets (or local .env) to start asking questions.")
+    session_key = user_api_key()
+    if not check_health(user_api_key=session_key).api_key_set:
+        st.error("Enter a Gemini API key above, or configure the protected server key.")
         st.stop()
     update_session_title(session, prompt)
     session["messages"].append({"role": "user", "content": prompt})
@@ -218,7 +254,11 @@ if prompt:
         st.markdown(prompt)
     with st.chat_message("assistant", avatar="🎓"):
         with st.spinner("Finding the strongest passages…"):
-            result = bot_for(session).ask(prompt, guidance=MODE_HINTS[mode])
+            result = bot_for(session).ask(
+                prompt,
+                guidance=MODE_HINTS[mode],
+                api_key=session_key,
+            )
         answer = result.get("answer", "I couldn't prepare an answer.")
         st.markdown(answer)
         st.markdown(f'<div class="answer-meta"><span>{mode}</span> · {result.get("latency_ms",0)/1000:.1f}s · grounded response</div>', unsafe_allow_html=True)
