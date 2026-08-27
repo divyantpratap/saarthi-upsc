@@ -55,12 +55,18 @@ const REQUEST_TIMEOUT_MS = Number(envOr("GEMINI_TIMEOUT_MS", "25000"));
 const COMMIT_THRESHOLD = 300;
 
 /**
- * Structured generation gets a tighter budget than streaming, because it must
- * fit a whole three-model chain inside Vercel's 60s function limit. Three
- * attempts at 18s leaves headroom; at the streaming timeout it would be killed
- * mid-chain and the reader would get the fallback bank instead of a real drill.
+ * Structured generation is budgeted against a wall-clock deadline rather than a
+ * fixed per-call timeout, because the models vary enormously. Measured on the
+ * live API: gemini-3.7-flash 503s at ~11s, gemini-3.6-flash returned in 43.6s
+ * once and 5.7s the next, gemini-2.5-flash in 8-14s.
+ *
+ * A fixed 18s cap killed 3.6-flash on the run where it legitimately needed 43s
+ * and handed the reader the fallback question bank. A deadline instead lets a
+ * slow-but-working model use the time a fast-failing one did not, while still
+ * fitting inside Vercel's 60s function limit.
  */
-const JSON_TIMEOUT_MS = 18_000;
+const JSON_DEADLINE_MS = 50_000;
+const MIN_ATTEMPT_MS = 6_000;
 const EMBED_TIMEOUT_MS = 15_000;
 
 /**
@@ -305,10 +311,15 @@ export async function generateJson<T>(
   prompt: string,
   { system, schema, apiKey }: { system: string; schema: object; apiKey?: string },
 ): Promise<T> {
-  const ai = client(apiKey, JSON_TIMEOUT_MS);
-  const response = await withRetry(
-    (model) =>
-      ai.models.generateContent({
+  const deadline = Date.now() + JSON_DEADLINE_MS;
+  let last: unknown;
+
+  for (const model of modelChain()) {
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_ATTEMPT_MS) break; // not enough left to be worth trying
+    try {
+      const ai = client(apiKey, remaining);
+      const response = await ai.models.generateContent({
         model,
         contents: prompt,
         config: {
@@ -319,11 +330,17 @@ export async function generateJson<T>(
           maxOutputTokens: 4096,
           ...thinkingFor(model),
         },
-      }),
-    modelChain(),
-  );
-
-  const text = response.text;
-  if (!text) throw new GeminiError("Empty structured response.", false);
-  return JSON.parse(text) as T;
+      });
+      const text = response.text;
+      if (!text) throw new GeminiError("Empty structured response.", false);
+      return JSON.parse(text) as T;
+    } catch (error) {
+      last = error;
+      const summary = String(error).slice(0, 160).replace(/\s+/g, " ");
+      console.warn(`[gemini] ${model}: structured call failed. ${summary}`);
+      // Every failure here is worth moving on from: a slower sibling may still
+      // answer inside the remaining budget.
+    }
+  }
+  throw new GeminiError(String(last ?? "structured generation failed"), isRateLimit(last));
 }
