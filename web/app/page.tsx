@@ -79,6 +79,7 @@ export default function AskPage() {
           onSources: (sources) => patch((m) => ({ ...m, sources })),
           onNotice: (notice) => patch((m) => ({ ...m, notice })),
           onModel: (model) => patch((m) => ({ ...m, model })),
+          onReset: () => patch((m) => ({ ...m, content: "", notice: undefined })),
           onText: (delta) =>
             patch((m) => ({ ...m, content: m.content + delta })),
           onError: (message) =>

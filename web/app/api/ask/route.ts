@@ -121,6 +121,10 @@ export async function POST(request: Request) {
           system: SYSTEM_INSTRUCTION,
           apiKey: body.apiKey,
           onModel: (model) => send({ type: "model", value: model }),
+          onRestart: () => {
+            produced = false;
+            send({ type: "reset" });
+          },
         })) {
           produced = true;
           send({ type: "text", value: token });

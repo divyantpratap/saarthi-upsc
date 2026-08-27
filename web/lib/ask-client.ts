@@ -19,6 +19,8 @@ export interface AskHandlers {
   onText?: (delta: string) => void;
   onNotice?: (notice: string) => void;
   onModel?: (model: string) => void;
+  /** Discard streamed text: the server is re-answering on another model. */
+  onReset?: () => void;
   onError?: (message: string, rateLimited: boolean) => void;
 }
 
@@ -27,6 +29,7 @@ type Frame =
   | { type: "text"; value: string }
   | { type: "notice"; value: string }
   | { type: "model"; value: string }
+  | { type: "reset" }
   | { type: "error"; value: string; rateLimited: boolean }
   | { type: "done" };
 
@@ -77,6 +80,9 @@ export async function ask(
         break;
       case "model":
         handlers.onModel?.(frame.value);
+        break;
+      case "reset":
+        handlers.onReset?.();
         break;
       case "error":
         handlers.onError?.(frame.value, frame.rateLimited);

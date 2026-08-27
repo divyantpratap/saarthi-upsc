@@ -122,7 +122,14 @@ function isOverloaded(error: unknown): boolean {
     message.includes("INTERNAL") ||
     message.includes("overloaded") ||
     message.includes("aborted") ||
-    message.includes("timeout")
+    message.includes("timeout") ||
+    // undici surfaces a dropped socket as a bare "terminated" TypeError, with
+    // no status code to match on. Left unclassified it read as fatal, so a
+    // dropped connection skipped failover entirely.
+    message.includes("terminated") ||
+    message.includes("fetch failed") ||
+    message.includes("ECONNRESET") ||
+    message.includes("socket hang up")
   );
 }
 
@@ -208,12 +215,17 @@ export async function embedQuery(
 
 export async function* generateStream(
   prompt: string,
-  { system, apiKey, temperature = 0.25, onModel }: {
+  { system, apiKey, temperature = 0.25, onModel, onRestart }: {
     system: string;
     apiKey?: string;
     temperature?: number;
     /** Which model actually served the answer, once the chain settles. */
     onModel?: (model: string) => void;
+    /**
+     * A partly-streamed answer is being abandoned for the next model. The
+     * caller should discard what it has emitted so far.
+     */
+    onRestart?: () => void;
   },
 ): AsyncGenerator<string> {
   const ai = client(apiKey);
@@ -258,12 +270,15 @@ export async function* generateStream(
         last = error;
         const summary = String(error).slice(0, 160).replace(/\s+/g, " ");
 
-        // A failure after the first token cannot be retried transparently:
-        // restarting would rewrite the answer the reader is already reading.
-        // Let the caller keep what they have instead.
+        // Past the commit point the reader can already see text. Where a
+        // healthier model remains, retract it and start over — a brief flicker
+        // beats a truncated answer. On the last rung, keep what they have.
         if (produced) {
+          const isLastModel = model === models[models.length - 1];
           console.warn(`[gemini] ${model}: failed mid-stream. ${summary}`);
-          throw new PartialAnswer(summary);
+          if (isLastModel) throw new PartialAnswer(summary);
+          onRestart?.();
+          break;
         }
 
         if (/404|NOT_FOUND/.test(String(error))) {
