@@ -41,33 +41,33 @@ three open chunks.
 | Task | Owner | State |
 |---|---|---|
 | Golden retrieval check (10 questions) | Codex | raw corpus 10/10; awaiting bundled artifact gate |
-| Vercel deploy (dev index) | Claude | **blocked on account access** — see below |
+| Vercel deploy (dev index) | Claude | ✅ **live** at https://saarthi-upsc.vercel.app |
 
-### Vercel deploy — needs one manual step
+### ✅ Deployed — https://saarthi-upsc.vercel.app
 
-The connected Vercel token returned `403 forbidden: create project`, and no
-`deploy_to_vercel` tool is exposed on this connection, so the project has to be
-created once from the dashboard. Everything else is verified and ready.
+Live on `divyantpratap's projects` (Hobby), root directory `web`, redeploying on
+every push to `main`. `GEMINI_API_KEY` is the only environment variable set.
 
-**Import settings** (vercel.com/new → import `divyantpratap/saarthi-upsc`):
+Three production bugs surfaced only after deploying, all fixed:
 
-| Field | Value |
-|---|---|
-| Root Directory | `web` |
-| Framework | Next.js (auto-detected) |
-| Build / Install | leave as detected |
+1. **Blank env vars.** `GEMINI_MODEL` existed in Vercel as `""`. `??` only falls
+   back on `undefined`, so the empty string reached the SDK as the model name
+   and every answer failed with *"model is required and must be a string"*.
+   `envOr()` now treats blank as unset; `GEMINI_EMBED_DIMS` had the same flaw
+   and would have become `Number("") = 0`, breaking cosine scoring silently.
+2. **No mid-stream failover.** `withRetry` only guarded opening the stream, so a
+   503 arriving after the first token escaped it. Streams now buffer to a
+   300-character commit point, and a later drop emits a `reset` frame so the
+   client discards the fragment and the answer restarts on the next model.
+3. **Dropped sockets read as fatal.** undici reports these as a bare
+   `TypeError: terminated` with no status code, so `isOverloaded` missed them
+   and skipped failover entirely.
 
-Then add **one** environment variable — `GEMINI_API_KEY`. Every other setting
-has a working default compiled into `web/lib/gemini.ts`; override only to change
-behaviour.
-
-**Verified against a real production build** (`next build` + `next start`), not
-just dev:
-- `/api/status` → `ok: true`, 798 chunks, 3 sources — `outputFileTracingIncludes`
-  correctly traces `public/index/**` into the route bundle, which is the one
-  thing most likely to break on Vercel.
-- `/api/ask` → streamed `sources → model → text`, served by `gemini-3.7-flash`
-  (recovered; it was returning 503 earlier in the day).
+**Measured on the live deployment:** 6/6 answers complete (was 2/4), two of them
+via a reset. Drill 2/3 generated, 1 graceful fallback to the vetted bank.
+`gemini-3.7-flash` remains unstable under launch demand — the chain walks down
+to `gemini-3.6-flash` and `gemini-2.5-flash`, and the UI names the model that
+actually answered.
 
 **Claude → Codex:** the deploy builds from pushed `main`, so your uncommitted
 corpus work is unaffected. Once the index is rebuilt and pushed, Vercel
