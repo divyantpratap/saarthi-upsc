@@ -1,98 +1,82 @@
 # Saarthi v2 — working plan
 
-Live status of the Next.js rebuild. Kept current as work lands so a second
-agent can pick up any unclaimed task without re-deriving context.
+> **HANDOFF — Codex owns everything below.** Claude has stopped all background
+> work; no process of its is running and nothing will contend for the API key or
+> the repo. Every task is self-contained: file paths, commands and verification
+> are stated inline so none of it needs re-deriving.
 
-**Last updated:** 2026-08-27 14:57 IST
-**Branch:** `main` · **Deploy target:** Vercel · **Local:** `npm run dev --prefix web`
+**Last updated:** 2026-08-27 20:10 IST
+**Live:** https://saarthi-upsc.vercel.app · **Branch:** `main` (auto-deploys)
+**Local:** `npm run dev --prefix web` · **Python:** `.venv/bin/python`
 
 ---
 
-## ⛔ Blocked: free-tier embedding quota is an order of magnitude too small
+## Start here
 
-Two different API keys have now been exhausted. Measured, not estimated: the
-free tier yields roughly **500 embed requests per key per day**, against a Tier A
-corpus of **9,486 chunks**.
+Work the tasks in order. T1 is the only one that unblocks the product; T2–T8 are
+independent and can be done in any order or in parallel.
 
-```
-940 vectors cached — 9.9% of Tier A
-```
-
-| Path | Cost | Time |
+| # | Task | Needs Gemini quota? |
 |---|---|---|
-| **Billed key** (recommended) | **~$0.36** · 2.4M tokens @ $0.15/1M | ~2 hours |
-| Free tier, whole corpus | free | **~19 days** |
-| Free tier, `--collections constitution` (1,212 chunks) | free | ~2 days |
+| T1 | Build and commit the Tier A index | **yes** |
+| T2 | Rate-limit the public endpoints | no |
+| T3 | Test the reliability layer | no |
+| T4 | Retire Streamlit from `main` | no |
+| T5 | Custom mock tests in the UI | no |
+| T6 | Tier B backfill | **yes** |
+| T7 | Responsive + accessibility pass | no |
+| T8 | Report the model that actually answers | no |
 
-This is not a pacing problem, and raising the rate does not help — an earlier
-note in this file suggesting the limit was per-minute was wrong twice over.
-`build_index.py` exits cleanly on `DailyQuotaExhausted`; the content-addressed
-cache means resuming re-embeds nothing.
+---
 
-**A second agent cannot work around this.** The limit belongs to the Gemini API
-key, not to whoever runs the script. Codex running `build_index.py` makes the
-same calls against the same key. It only helps if Codex holds a *different* key
-— and then only one process should run at a time, or they contend for the same
-per-minute budget and both stall.
+## T1 · Build and commit the Tier A index — *unblocks the product*
 
-**Corpus breakdown** (Tier A): 8,271 NCERT · 1,212 Constitution · 3 notes.
+The deployed app carries a **798-chunk dev index** whose only quotable source is
+`sample_study_notes.txt`. Answers are honest about having no material, but the
+app cannot demo until this lands.
 
-If staying on the free tier, run the Constitution alone first — it is the single
-highest-value UPSC source and gives article-level citations:
+**The constraint, measured across two exhausted keys:** the Gemini free tier
+yields roughly **500 embed requests per key per day**. Tier A is **9,486
+chunks**. This is a property of the API key, not of who runs the script — the
+same limit applies to any agent. `ingest/.build/embeddings.sqlite3` already
+holds **940 vectors (9.9%)**, content-addressed, so nothing is ever re-embedded.
+
+| Route | Cost | Time |
+|---|---|---|
+| Billed key | ~$0.36 (2.4M tokens @ $0.15/1M) | ~2 hours |
+| Free tier, whole corpus | free | ~19 days |
+| Free tier, Constitution only (1,212 chunks) | free | ~2 days |
 
 ```bash
+# Whole Tier A corpus — needs a billed key to finish in one run
+.venv/bin/python ingest/build_index.py --only-open
+
+# Or concentrate a free day's quota on the highest-value source
 .venv/bin/python ingest/build_index.py --only-open --collections constitution
 ```
 
+Re-running is always safe and resumes from the cache. On exhaustion the script
+exits 0 with `DailyQuotaExhausted` and a message — that is expected, not a bug.
+
+**When it completes:**
+1. Check `web/public/index/meta.json` — `count` should match the run, and `dims`
+   must be `768`.
+2. `npm run test:retrieval --prefix web` — the golden-retrieval harness gates on
+   a real open index and currently skips.
+3. Commit `web/public/index/` and push. Vercel redeploys automatically.
+4. Confirm live: `curl -s https://saarthi-upsc.vercel.app/api/status` should show
+   the new `chunks` and `openChunks`.
+
+**Corpus source of truth:** `bash ingest/fetch_open_corpus.sh` re-downloads the
+Constitution and 21 NCERT titles into gitignored `data/pdfs/`. Only the derived
+index ships; the PDFs never enter the repo.
+
 ## Now in progress
+
+_Nothing claimed. Add a row here when you start a task._
 
 | Task | Owner | State |
 |---|---|---|
-| Golden retrieval check (10 questions) | Codex | raw corpus 10/10; awaiting bundled artifact gate |
-| Vercel deploy (dev index) | Claude | ✅ **live** at https://saarthi-upsc.vercel.app |
-
-### ✅ Deployed — https://saarthi-upsc.vercel.app
-
-Live on `divyantpratap's projects` (Hobby), root directory `web`, redeploying on
-every push to `main`. `GEMINI_API_KEY` is the only environment variable set.
-
-Three production bugs surfaced only after deploying, all fixed:
-
-1. **Blank env vars.** `GEMINI_MODEL` existed in Vercel as `""`. `??` only falls
-   back on `undefined`, so the empty string reached the SDK as the model name
-   and every answer failed with *"model is required and must be a string"*.
-   `envOr()` now treats blank as unset; `GEMINI_EMBED_DIMS` had the same flaw
-   and would have become `Number("") = 0`, breaking cosine scoring silently.
-2. **No mid-stream failover.** `withRetry` only guarded opening the stream, so a
-   503 arriving after the first token escaped it. Streams now buffer to a
-   300-character commit point, and a later drop emits a `reset` frame so the
-   client discards the fragment and the answer restarts on the next model.
-3. **Dropped sockets read as fatal.** undici reports these as a bare
-   `TypeError: terminated` with no status code, so `isOverloaded` missed them
-   and skipped failover entirely.
-
-4. **Fixed per-call timeouts on structured output.** Measured live: 3.7-flash
-   503s at ~11s, 3.6-flash returned in 43.6s once and 5.7s the next, 2.5-flash
-   in 8-14s. An 18s cap killed 3.6-flash mid-response, so the drill served the
-   fallback bank while a working model was still generating. `generateJson` now
-   runs against a 50s wall-clock deadline and hands each model whatever remains.
-
-**Measured on the live deployment, after all four fixes:**
-
-| Path | Before | After |
-|---|---|---|
-| `/api/ask` | 2/4 complete | **4/4**, and 6/6 on an earlier run |
-| `/api/drill` | 2/3 generated | **5/5 generated**, no bank fallback |
-
-`gemini-3.7-flash` remains unstable under launch demand — it is still the
-configured primary, and the chain walks down to `gemini-3.6-flash` and
-`gemini-2.5-flash` when it fails. The UI names the model that actually answered.
-
-**Claude → Codex:** the deploy builds from pushed `main`, so your uncommitted
-corpus work is unaffected. Once the index is rebuilt and pushed, Vercel
-redeploys automatically — no Vercel action needed from you.
-
----
 
 ## Done
 
@@ -135,26 +119,11 @@ redeploys automatically — no Vercel action needed from you.
 
 ---
 
-## Next up
-
-1. **Rebuild + commit the index** — blocked on the daily quota above. When it
-   resets: `.venv/bin/python ingest/build_index.py --only-open`, confirm
-   `meta.json` counts, commit `web/public/index/`. The committed index is
-   currently a 798-chunk dev build, so the deployed app can barely quote
-   anything.
-2. **Golden retrieval check** — harness is implemented in
-   `web/lib/retrieve.golden.test.ts`. Run `npm run test:retrieval --prefix web`
-   after the Tier A rebuild; it fails fast while the 3-open-chunk dev index is
-   still committed and makes no embedding API calls. The same ten lexical
-   cases currently pass 10/10 against the corrected raw corpus.
-3. **Deploy to Vercel** — project from `web/`, env vars per below, confirm a
-   cold start answers with zero indexing embed calls.
-
-## Backlog — unclaimed, ordered by value
+## T2–T8 · Remaining work (no Gemini quota required)
 
 Each item is self-contained. Claim one by adding a row to **Now in progress**.
 
-### B1 · Guard the public endpoints against abuse — *highest value*
+### T2 · Guard the public endpoints against abuse — *highest value of these*
 
 `/api/ask` and `/api/drill` are public, unauthenticated, and spend a shared
 Gemini key. One person looping requests exhausts the daily quota and takes the
@@ -167,7 +136,7 @@ for `/api/drill`. Return 429 with a plain message the UI can render, and exempt
 requests that carry a caller's own key (`body.apiKey`), since those spend the
 visitor's quota rather than ours.
 
-### B2 · Test the reliability layer
+### T3 · Test the reliability layer
 
 `web/lib/gemini.ts` broke in production four separate ways today and none of it
 is covered. Everything below is unit-testable with a stubbed `GoogleGenAI`:
@@ -182,7 +151,7 @@ is covered. Everything below is unit-testable with a stubbed `GoogleGenAI`:
 - `generateJson` respects `JSON_DEADLINE_MS` and skips a model with under
   `MIN_ATTEMPT_MS` left.
 
-### B3 · Retire Streamlit from `main`
+### T4 · Retire Streamlit from `main`
 
 Move `app.py`, `pages/`, `settings.py` and the Streamlit-only bits of `src/` to
 a `streamlit-legacy` branch, then delete from `main`.
@@ -193,21 +162,21 @@ the project as **Python** and offered eight bogus environment variables scraped
 from `.env.example` — one of which (`GEMINI_MODEL=""`) caused the first
 production outage. Keep `ingest/requirements.txt` for the offline pipeline.
 
-### B4 · Custom mock tests in the UI
+### T5 · Custom mock tests in the UI
 
 Issue (xi), second half. `/mock` currently serves only the built-in bank. Add
 creation of a custom test that persists to the same IndexedDB store as uploads
 (`web/lib/local-library.ts`) — a new object store, same DB. Reuse `QuizCard` as
 is; it is already self-contained per question.
 
-### B5 · Tier B backfill
+### T6 · Tier B backfill — *needs quota*
 
 16,342 restricted chunks, roughly 5h of embedding, now viable on the working
 key. `ingest/build_index.py` with no `--only-open`. Gives citation-only coverage
 of the 63 commercial titles. Independent of everything else; the cache is
 content-addressed so Tier A vectors are reused.
 
-### B6 · Responsive and accessibility pass
+### T7 · Responsive and accessibility pass
 
 The UI was built and verified at 1440×900 only. Needs checking at 375px and
 768px — particularly the sidebar overlay behaviour below the 900px breakpoint in
@@ -217,7 +186,7 @@ Accessibility on `QuizCard.tsx`: the verdict after "Check answer" is announced
 to nobody — it needs `aria-live`. Also confirm the option rows are reachable and
 selectable by keyboard, and that focus is visible throughout.
 
-### B7 · Report the model that actually answers
+### T8 · Report the model that actually answers
 
 `/api/status` returns `answerModel: MODEL` — the *configured* primary. Since
 `gemini-3.7-flash` is currently failing nearly every request and answers come
