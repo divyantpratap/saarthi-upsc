@@ -82,7 +82,13 @@ export default function AskPage() {
           onText: (delta) =>
             patch((m) => ({ ...m, content: m.content + delta })),
           onError: (message) =>
-            patch((m) => ({ ...m, content: message, error: true })),
+            patch((m) =>
+              // Keep whatever streamed successfully; show the failure beside
+              // it rather than in place of it.
+              m.content
+                ? { ...m, notice: message }
+                : { ...m, content: message, error: true },
+            ),
         });
       } catch (error) {
         patch((m) => ({ ...m, content: String(error), error: true }));

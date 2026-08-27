@@ -4,7 +4,12 @@
  * Emits newline-delimited JSON so the client can render citations before the
  * first token arrives: one `sources` frame, then `text` frames, then `done`.
  */
-import { embedQuery, GeminiError, generateStream } from "@/lib/gemini";
+import {
+  embedQuery,
+  GeminiError,
+  generateStream,
+  PartialAnswer,
+} from "@/lib/gemini";
 import { loadIndex } from "@/lib/index-store";
 import { buildPrompt, formatHistory, SYSTEM_INSTRUCTION } from "@/lib/prompt";
 import { formatContext, retrieve } from "@/lib/retrieve";
@@ -124,6 +129,16 @@ export async function POST(request: Request) {
 
         send({ type: "done" });
       } catch (error) {
+        // The reader already has most of the answer; truncating it is a far
+        // better outcome than replacing it with a red box.
+        if (error instanceof PartialAnswer) {
+          send({
+            type: "notice",
+            value: "The model dropped the connection — this answer is cut short.",
+          });
+          send({ type: "done" });
+          return;
+        }
         const rateLimited =
           error instanceof GeminiError ? error.rateLimited : false;
         send({

@@ -52,6 +52,14 @@ function thinkingFor(model: string) {
     : {};
 }
 
+/** Raised when a stream died after the reader already had part of the answer. */
+export class PartialAnswer extends Error {
+  constructor(readonly detail: string) {
+    super(detail);
+    this.name = "PartialAnswer";
+  }
+}
+
 export class GeminiError extends Error {
   constructor(
     message: string,
@@ -186,27 +194,63 @@ export async function* generateStream(
   },
 ): AsyncGenerator<string> {
   const ai = client(apiKey);
-  let servedBy = MODEL;
-  const stream = await withRetry(async (model) => {
-    const opened = await ai.models.generateContentStream({
-      model,
-      contents: prompt,
-      config: {
-        systemInstruction: system,
-        temperature,
-        maxOutputTokens: 4096,
-        ...thinkingFor(model),
-      },
-    });
-    // Only reached once the model accepted the request, so this names the model
-    // that actually answered rather than the one we tried first.
-    servedBy = model;
-    return opened;
-  }, modelChain());
-  onModel?.(servedBy);
-  for await (const chunk of stream) {
-    if (chunk.text) yield chunk.text;
+  const models = modelChain();
+  let last: unknown;
+
+  for (const model of models) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      // Tracked per attempt: once tokens have reached the reader, switching
+      // models would restart the answer mid-sentence.
+      let produced = false;
+      try {
+        const stream = await ai.models.generateContentStream({
+          model,
+          contents: prompt,
+          config: {
+            systemInstruction: system,
+            temperature,
+            maxOutputTokens: 4096,
+            ...thinkingFor(model),
+          },
+        });
+        onModel?.(model);
+        for await (const chunk of stream) {
+          if (chunk.text) {
+            produced = true;
+            yield chunk.text;
+          }
+        }
+        return;
+      } catch (error) {
+        last = error;
+        const summary = String(error).slice(0, 160).replace(/\s+/g, " ");
+
+        // A failure after the first token cannot be retried transparently:
+        // restarting would rewrite the answer the reader is already reading.
+        // Let the caller keep what they have instead.
+        if (produced) {
+          console.warn(`[gemini] ${model}: failed mid-stream. ${summary}`);
+          throw new PartialAnswer(summary);
+        }
+
+        if (/404|NOT_FOUND/.test(String(error))) {
+          console.warn(`[gemini] ${model}: not found — trying next. ${summary}`);
+          break;
+        }
+        if (isOverloaded(error)) {
+          console.warn(`[gemini] ${model}: overloaded — trying next. ${summary}`);
+          break;
+        }
+        if (!isRateLimit(error)) {
+          console.error(`[gemini] ${model}: fatal. ${summary}`);
+          throw error;
+        }
+        console.warn(`[gemini] ${model}: rate limited (attempt ${attempt + 1}).`);
+        if (attempt < MAX_ATTEMPTS - 1) await sleep(retryDelayMs(error, attempt));
+      }
+    }
   }
+  throw new GeminiError(String(last), isRateLimit(last));
 }
 
 export async function generateJson<T>(
