@@ -27,6 +27,8 @@ export function envOr(name: string, fallback: string): string {
 
 export const MODEL = envOr("GEMINI_MODEL", "gemini-3.7-flash");
 export const FALLBACK_MODEL = envOr("GEMINI_MODEL_FALLBACK", "gemini-3.6-flash");
+/** Last rung, tried only when both newer models are unavailable. */
+export const LAST_RESORT_MODEL = envOr("GEMINI_MODEL_LAST_RESORT", "gemini-2.5-flash");
 export const EMBED_MODEL = envOr("GEMINI_EMBED_MODEL", "gemini-embedding-001");
 export const EMBED_DIMS = Number(envOr("GEMINI_EMBED_DIMS", "768"));
 
@@ -39,6 +41,26 @@ const MAX_BACKOFF_MS = 30_000;
  * 60s Vercel function budget.
  */
 const REQUEST_TIMEOUT_MS = Number(envOr("GEMINI_TIMEOUT_MS", "25000"));
+
+/**
+ * Hold back the opening of an answer until this many characters have arrived.
+ *
+ * gemini-3.7-flash drops connections under launch demand, usually within the
+ * first hundred characters. Yielding immediately meant a dropped stream left
+ * the reader with a 77-character stub that could not be retried, because
+ * restarting would rewrite text they had already seen. Buffering to a commit
+ * point keeps early failures invisible and recoverable; the delay is a fraction
+ * of a second of generation.
+ */
+const COMMIT_THRESHOLD = 300;
+
+/**
+ * Structured generation gets a tighter budget than streaming, because it must
+ * fit a whole three-model chain inside Vercel's 60s function limit. Three
+ * attempts at 18s leaves headroom; at the streaming timeout it would be killed
+ * mid-chain and the reader would get the fallback bank instead of a real drill.
+ */
+const JSON_TIMEOUT_MS = 18_000;
 const EMBED_TIMEOUT_MS = 15_000;
 
 /**
@@ -149,8 +171,9 @@ async function withRetry<T>(
 
 /** Primary first, then the fallback — but only if it is genuinely different. */
 function modelChain(primary = MODEL): string[] {
-  const chain = primary === FALLBACK_MODEL ? [primary] : [primary, FALLBACK_MODEL];
-  const usable = chain.filter((model) => model.trim().length > 0);
+  const usable = [primary, FALLBACK_MODEL, LAST_RESORT_MODEL]
+    .map((model) => model.trim())
+    .filter((model, i, all) => model.length > 0 && all.indexOf(model) === i);
   if (!usable.length) throw new GeminiError("No Gemini model configured.", false);
   return usable;
 }
@@ -214,12 +237,22 @@ export async function* generateStream(
           },
         });
         onModel?.(model);
+        let buffered = "";
         for await (const chunk of stream) {
-          if (chunk.text) {
-            produced = true;
+          if (!chunk.text) continue;
+          if (produced) {
             yield chunk.text;
+            continue;
+          }
+          buffered += chunk.text;
+          if (buffered.length >= COMMIT_THRESHOLD) {
+            produced = true;
+            yield buffered;
+            buffered = "";
           }
         }
+        // A complete answer shorter than the commit point still counts.
+        if (buffered) yield buffered;
         return;
       } catch (error) {
         last = error;
@@ -257,7 +290,7 @@ export async function generateJson<T>(
   prompt: string,
   { system, schema, apiKey }: { system: string; schema: object; apiKey?: string },
 ): Promise<T> {
-  const ai = client(apiKey);
+  const ai = client(apiKey, JSON_TIMEOUT_MS);
   const response = await withRetry(
     (model) =>
       ai.models.generateContent({
