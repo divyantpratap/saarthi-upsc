@@ -10,12 +10,25 @@
  */
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-export const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.7-flash";
-export const FALLBACK_MODEL =
-  process.env.GEMINI_MODEL_FALLBACK ?? "gemini-3.6-flash";
-export const EMBED_MODEL =
-  process.env.GEMINI_EMBED_MODEL ?? "gemini-embedding-001";
-export const EMBED_DIMS = Number(process.env.GEMINI_EMBED_DIMS ?? 768);
+/**
+ * Read an env var, treating blank as unset.
+ *
+ * `??` only falls back on undefined, so a variable present-but-empty — the
+ * normal result of clearing a row in a hosting dashboard — passed straight
+ * through. An empty GEMINI_MODEL reached the SDK as the model name and every
+ * answer failed with "model is required and must be a string"; an empty
+ * GEMINI_EMBED_DIMS would have become Number("") = 0 and broken retrieval more
+ * quietly still.
+ */
+export function envOr(name: string, fallback: string): string {
+  const value = process.env[name]?.trim();
+  return value ? value : fallback;
+}
+
+export const MODEL = envOr("GEMINI_MODEL", "gemini-3.7-flash");
+export const FALLBACK_MODEL = envOr("GEMINI_MODEL_FALLBACK", "gemini-3.6-flash");
+export const EMBED_MODEL = envOr("GEMINI_EMBED_MODEL", "gemini-embedding-001");
+export const EMBED_DIMS = Number(envOr("GEMINI_EMBED_DIMS", "768"));
 
 const MAX_ATTEMPTS = 4;
 const MAX_BACKOFF_MS = 30_000;
@@ -25,7 +38,7 @@ const MAX_BACKOFF_MS = 30_000;
  * student as the app having hung. Two models at 25s each still fits inside the
  * 60s Vercel function budget.
  */
-const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS ?? 25_000);
+const REQUEST_TIMEOUT_MS = Number(envOr("GEMINI_TIMEOUT_MS", "25000"));
 const EMBED_TIMEOUT_MS = 15_000;
 
 /**
@@ -128,7 +141,10 @@ async function withRetry<T>(
 
 /** Primary first, then the fallback — but only if it is genuinely different. */
 function modelChain(primary = MODEL): string[] {
-  return primary === FALLBACK_MODEL ? [primary] : [primary, FALLBACK_MODEL];
+  const chain = primary === FALLBACK_MODEL ? [primary] : [primary, FALLBACK_MODEL];
+  const usable = chain.filter((model) => model.trim().length > 0);
+  if (!usable.length) throw new GeminiError("No Gemini model configured.", false);
+  return usable;
 }
 
 export async function embedQuery(
