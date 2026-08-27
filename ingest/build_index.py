@@ -25,6 +25,7 @@ import hashlib
 import json
 import math
 import re
+import sqlite3
 import sys
 import time
 from collections import Counter
@@ -38,7 +39,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from settings import DATA_DIR, GEMINI_EMBED_MODEL, PDF_DIR  # noqa: E402
+from settings import DATA_DIR, GEMINI_EMBED_MODEL, MAX_PAGES_FULL, PDF_DIR  # noqa: E402
 from src.ingest.chunker import chunk_text  # noqa: E402
 from src.ingest.pdf_parser import list_pdfs, pdf_to_documents  # noqa: E402
 from tiers import OPEN, RESTRICTED, classify  # noqa: E402
@@ -94,8 +95,16 @@ def collect_chunks(limit: int | None = None) -> list[dict]:
     if limit:
         pdfs = pdfs[:limit]
     for pdf_path in pdfs:
-        for document in pdf_to_documents(pdf_path):
-            tier = classify(document["metadata"]["filename"], "pdf")
+        try:
+            display_name = str(pdf_path.relative_to(PDF_DIR))
+        except ValueError:
+            display_name = pdf_path.name
+        tier = classify(display_name, "pdf")
+        # Open material is what the app actually quotes, so read it whole. A
+        # truncated Constitution would silently lose two-thirds of its articles.
+        # Restricted titles stay capped: they ship as citations either way.
+        max_pages = None if tier == OPEN else MAX_PAGES_FULL
+        for document in pdf_to_documents(pdf_path, max_pages=max_pages):
             for chunk in chunk_text(
                 document["text"], document["source"], document["metadata"]
             ):
@@ -173,59 +182,91 @@ def embed_batch(client, texts: list[str], limiter: RateLimiter) -> list[list[flo
     raise RuntimeError("embedding failed after 6 attempts against the rate limit")
 
 
-def embed_all(chunks: list[dict], fingerprint: str, resume: bool) -> list[list[float]]:
-    from google import genai
+def _cache() -> sqlite3.Connection:
+    """Content-addressed vector cache.
 
+    Keyed by the hash of the chunk text, not by its position, so adding a source
+    to the corpus only embeds the new material. A positional checkpoint would
+    invalidate every vector the moment a single PDF joined the library.
+    """
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = BUILD_DIR / "checkpoint.json"
-    partial_path = BUILD_DIR / "vectors.partial.f32"
+    conn = sqlite3.connect(BUILD_DIR / "embeddings.sqlite3")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS vectors ("
+        "  hash TEXT NOT NULL, model TEXT NOT NULL, dims INTEGER NOT NULL,"
+        "  vec BLOB NOT NULL, PRIMARY KEY (hash, model, dims))"
+    )
+    return conn
 
-    done = 0
-    if resume and checkpoint_path.exists():
-        state = json.loads(checkpoint_path.read_text())
-        if state.get("fingerprint") == fingerprint:
-            done = state.get("done", 0)
-            print(f"  resuming at chunk {done:,} of {len(chunks):,}")
-        else:
-            print("  corpus changed since last run — starting over")
-            partial_path.unlink(missing_ok=True)
-    else:
-        partial_path.unlink(missing_ok=True)
 
-    client = genai.Client()
-    limiter = RateLimiter(REQUESTS_PER_MINUTE)
-    started = time.monotonic()
+def _text_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+
+def embed_all(chunks: list[dict], resume: bool = True) -> list[list[float]]:
+    from google import genai
     import numpy as np
 
-    with open(partial_path, "ab") as sink:
-        for start in range(done, len(chunks), BATCH_SIZE):
-            batch = chunks[start : start + BATCH_SIZE]
-            vectors = embed_batch(client, [c["text"] for c in batch], limiter)
-            np.asarray(vectors, dtype=np.float32).tofile(sink)
-            sink.flush()
+    conn = _cache()
+    if not resume:
+        conn.execute("DELETE FROM vectors WHERE model=? AND dims=?", (GEMINI_EMBED_MODEL, EMBED_DIMS))
+        conn.commit()
 
-            finished = start + len(batch)
-            checkpoint_path.write_text(
-                json.dumps(
-                    {
-                        "fingerprint": fingerprint,
-                        "done": finished,
-                        "dims": EMBED_DIMS,
-                        "model": GEMINI_EMBED_MODEL,
-                    }
-                )
+    hashes = [_text_hash(chunk["text"]) for chunk in chunks]
+    cached = {
+        row[0]
+        for row in conn.execute(
+            "SELECT hash FROM vectors WHERE model=? AND dims=?",
+            (GEMINI_EMBED_MODEL, EMBED_DIMS),
+        )
+    }
+
+    # De-duplicate: repeated boilerplate across a corpus is common and each
+    # duplicate would otherwise cost a request.
+    pending: dict[str, str] = {}
+    for chunk, digest in zip(chunks, hashes):
+        if digest not in cached and digest not in pending:
+            pending[digest] = chunk["text"]
+
+    reused = len(chunks) - len(pending)
+    print(f"  {reused:,} already embedded  ·  {len(pending):,} to embed")
+
+    if pending:
+        client = genai.Client()
+        limiter = RateLimiter(REQUESTS_PER_MINUTE)
+        started = time.monotonic()
+        items = list(pending.items())
+
+        for start in range(0, len(items), BATCH_SIZE):
+            batch = items[start : start + BATCH_SIZE]
+            vectors = embed_batch(client, [text for _, text in batch], limiter)
+            conn.executemany(
+                "INSERT OR REPLACE INTO vectors (hash, model, dims, vec) VALUES (?,?,?,?)",
+                [
+                    (digest, GEMINI_EMBED_MODEL, EMBED_DIMS,
+                     np.asarray(vector, dtype=np.float32).tobytes())
+                    for (digest, _), vector in zip(batch, vectors)
+                ],
             )
+            conn.commit()
+
+            done = start + len(batch)
             elapsed = time.monotonic() - started
-            rate = (finished - done) / elapsed if elapsed > 0 else 0
-            remaining = (len(chunks) - finished) / rate / 60 if rate > 0 else 0
-            print(
-                f"  embedded {finished:,}/{len(chunks):,}"
-                f"  ({remaining:.0f} min remaining)"
-            )
+            rate = done / elapsed if elapsed > 0 else 0
+            remaining = (len(items) - done) / rate / 60 if rate > 0 else 0
+            print(f"  embedded {done:,}/{len(items):,}  ({remaining:.0f} min remaining)", flush=True)
 
-    raw = np.fromfile(partial_path, dtype=np.float32)
-    return raw.reshape(-1, EMBED_DIMS).tolist()
+    stored = {
+        row[0]: np.frombuffer(row[1], dtype=np.float32)
+        for row in conn.execute(
+            "SELECT hash, vec FROM vectors WHERE model=? AND dims=?",
+            (GEMINI_EMBED_MODEL, EMBED_DIMS),
+        )
+    }
+    missing = [d for d in hashes if d not in stored]
+    if missing:
+        raise SystemExit(f"{len(missing):,} chunks never embedded; re-run to continue")
+    return [stored[digest].tolist() for digest in hashes]
 
 
 # ------------------------------------------------------------------- emitting
@@ -302,7 +343,7 @@ def emit(chunks: list[dict], vectors: list[list[float]], fingerprint: str) -> No
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, help="only read the first N PDFs")
-    parser.add_argument("--resume", action="store_true", help="continue a partial run")
+    parser.add_argument("--rebuild", action="store_true", help="discard cached vectors")
     parser.add_argument("--chunks-only", action="store_true", help="skip embedding")
     args = parser.parse_args()
 
@@ -320,7 +361,7 @@ def main() -> None:
         return
 
     print(f"\nEmbedding with {GEMINI_EMBED_MODEL} at {EMBED_DIMS} dims…")
-    vectors = embed_all(chunks, fingerprint, resume=args.resume)
+    vectors = embed_all(chunks, resume=not args.rebuild)
     if len(vectors) != len(chunks):
         raise SystemExit(f"vector/chunk mismatch: {len(vectors)} vs {len(chunks)}")
 
