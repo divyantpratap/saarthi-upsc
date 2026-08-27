@@ -11,34 +11,47 @@
 
 ---
 
-## Status — everything is deployed
+## Status — deployed, but both keys are out of daily quota
 
-All work through T9 is committed and **live** at https://saarthi-upsc.vercel.app,
-verified on production after the push:
+Everything through T9 is committed and **live** at https://saarthi-upsc.vercel.app:
 
 ```
 9,486 chunks · 177 sources · retrievalMode: lexical
 ```
 
-An answer to "Explain the basic structure doctrine" now quotes NCERT *Indian
-Constitution at Work* pp. 16, 17 and 19 with the passage text shown — the first
-time the deployed app has cited real study material.
+**The app cannot answer right now.** Both Gemini projects have exhausted their
+free-tier *generation* allowance, on every model in the chain:
 
-**Verified independently before pushing:** 17 Python tests, 47 Vitest tests,
-10/10 golden retrieval against the real index, clean typecheck, lint and
-production build.
+```
+GenerateRequestsPerDayPerProjectPerModel-FreeTier
+```
+
+Retrieval still works and returns correct passages — the sources frame streams
+normally. Only the model call fails, and it surfaces as the rate-limit message.
+This resets at 00:00 Pacific (about 12:30 IST). A billed key clears it now.
+
+So the free tier caps three separate things per project per day: embed requests,
+generate requests, and the per-minute rates on both. A day of ordinary
+development and testing exhausts all of them.
+
+**This is why T2 mattered.** Rate limiting is now deployed, so a visitor cannot
+do to the shared key what a day of testing just did.
+
+### Verified before the quota ran out
+
+- 17 Python tests, 47 Vitest tests, 10/10 golden retrieval against the real index
+- Answers quoting NCERT *Indian Constitution at Work* pp. 16, 17, 19 with passage
+  text shown
+- Rotating progress status and the last-good-model optimisation, both confirmed
+  in the browser
 
 ### What remains
 
 | # | Task | State |
 |---|---|---|
-| T1 | Semantic vectors for Tier A | 950 of 9,486 cached; lexical retrieval ships meanwhile |
+| T1 | Semantic vectors for Tier A | 950 of 9,486 cached; lexical ships meanwhile |
 | T6 | Tier B backfill | not started; needs quota |
-| T10 | Streamlit deployment | app files are gone from `main`; the Streamlit Cloud app will fail its next rebuild and should be deleted |
-
-A scheduled daily job resumes embedding after each quota reset and upgrades
-retrieval from lexical to hybrid in place. Chunks do not change, so it only adds
-the matrix. A billed key finishes it in about two hours for ~$0.36.
+| T10 | Streamlit deployment | app files gone from `main`; the Streamlit Cloud app will fail its next rebuild and should be deleted |
 
 **Known retrieval limitation while lexical-only:** BM25 is strong on topical
 language ("basic structure doctrine", "Green Revolution" both land correctly)
