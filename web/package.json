@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:retrieval": "SAARTHI_REQUIRE_OPEN_INDEX=1 vitest run lib/retrieve.golden.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.19.0",

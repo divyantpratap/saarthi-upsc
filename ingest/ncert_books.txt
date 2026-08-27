@@ -1,11 +1,11 @@
-keps1dd|Polity|Class XI — Indian Constitution at Work
-kepy1dd|Polity|Class XI — Political Theory
+keps2dd|Polity|Class XI — Indian Constitution at Work
+keps1dd|Polity|Class XI — Political Theory
 leps1dd|Polity|Class XII — Contemporary World Politics
 leps2dd|Polity|Class XII — Politics in India Since Independence
 keec1dd|Economy|Class XI — Indian Economic Development
 leec1dd|Economy|Class XII — Introductory Macroeconomics
-kegy1dd|Geography|Class XI — Fundamentals of Physical Geography
-kegy2dd|Geography|Class XI — India Physical Environment
+kegy2dd|Geography|Class XI — Fundamentals of Physical Geography
+kegy1dd|Geography|Class XI — India Physical Environment
 legy1dd|Geography|Class XII — Fundamentals of Human Geography
 legy2dd|Geography|Class XII — India People and Economy
 lehs1dd|History|Class XII — Themes in Indian History I
@@ -15,7 +15,7 @@ kehs1dd|History|Class XI — Themes in World History
 kesy1dd|Society|Class XI — Introducing Sociology
 lesy1dd|Society|Class XII — Indian Society
 lesy2dd|Society|Class XII — Social Change and Development in India
-jess1dd|Social Science|Class X — India and the Contemporary World II
-jess2dd|Social Science|Class X — Contemporary India II
-jess3dd|Social Science|Class X — Democratic Politics II
-jess4dd|Social Science|Class X — Understanding Economic Development
+jess3dd|Social Science|Class X — India and the Contemporary World II
+jess1dd|Social Science|Class X — Contemporary India II
+jess4dd|Social Science|Class X — Democratic Politics II
+jess2dd|Social Science|Class X — Understanding Economic Development

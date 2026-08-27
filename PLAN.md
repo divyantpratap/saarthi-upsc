@@ -3,21 +3,43 @@
 Live status of the Next.js rebuild. Kept current as work lands so a second
 agent can pick up any unclaimed task without re-deriving context.
 
-**Last updated:** 2026-08-27 14:35 IST
+**Last updated:** 2026-08-27 14:47 IST
 **Branch:** `main` · **Deploy target:** Vercel · **Local:** `npm run dev --prefix web`
 
 ---
+
+## ⛔ Blocked: daily embedding quota exhausted
+
+The Tier A embed run is **stopped**, not running. It reached 190 of 9,542 chunks
+before the API returned:
+
+```
+quotaId: EmbedContentRequestsPerDayPerProjectPerModel-FreeTier
+```
+
+That is a **per-day** cap, not per-minute — no amount of pacing or backoff gets
+past it today. An earlier revision of this file blamed a per-minute ceiling;
+that was wrong. `build_index.py` now raises `DailyQuotaExhausted` and exits
+cleanly instead of burning hours in cooldown.
+
+**To unblock, either:**
+- wait for the reset (00:00 Pacific) and re-run `ingest/build_index.py --only-open`, or
+- point `GEMINI_API_KEY` at a billed project and re-run now.
+
+The 190 vectors already earned are banked in `ingest/.build/embeddings.sqlite3`
+and will be reused — stopping costs nothing.
+
+**Note for Codex:** the Tier A artifact is not coming today unless the key is
+switched. The golden-retrieval harness can be validated against the current
+798-chunk dev index in `web/public/index/` in the meantime; the NCERT label
+audit is unblocked and safe to do now, since no embed job is running.
 
 ## Now in progress
 
 | Task | Owner | State |
 |---|---|---|
-| Tier A embedding run (9,542 chunks) | background job | running, ~3h, resumable |
-
-The embed job writes to `ingest/.build/embeddings.sqlite3` (content-addressed).
-**Do not run `ingest/build_index.py` concurrently** — two writers will fight over
-the rate limit and both will stall. Re-running after it finishes is cheap:
-cached vectors are reused.
+| Golden retrieval check (10 questions) | Codex | harness ready; unblock by running against the dev index |
+| NCERT source-label audit | Codex | mapping mislabeled download codes — safe to move files now |
 
 ---
 
@@ -55,12 +77,15 @@ cached vectors are reused.
 
 ## Next up
 
-1. **Rebuild + commit the index** — once the embed run finishes, run
-   `.venv/bin/python ingest/build_index.py --only-open`, confirm `meta.json`
-   counts, commit `web/public/index/`. Currently the committed index is a
-   798-chunk dev build.
-2. **Golden retrieval check** — ten known questions, assert the expected source
-   lands top-3. No harness exists yet.
+1. **Rebuild + commit the index** — blocked on the daily quota above. When it
+   resets: `.venv/bin/python ingest/build_index.py --only-open`, confirm
+   `meta.json` counts, commit `web/public/index/`. The committed index is
+   currently a 798-chunk dev build, so the deployed app can barely quote
+   anything.
+2. **Golden retrieval check** — harness is implemented in
+   `web/lib/retrieve.golden.test.ts`. Run `npm run test:retrieval --prefix web`
+   after the Tier A rebuild; it fails fast while the 3-open-chunk dev index is
+   still committed and makes no embedding API calls.
 3. **Deploy to Vercel** — project from `web/`, env vars per below, confirm a
    cold start answers with zero indexing embed calls.
 
@@ -91,14 +116,21 @@ names the model that actually answered.
 
 ## Constraints worth knowing
 
-- **Free-tier embedding** is the bottleneck: ~55 req/min sustained. Bursting at
-  90 tripped a quota window that took six minutes to clear. `RateLimiter` in
-  `build_index.py` paces under it and cools down for 5/10/15 min before giving
-  up cleanly.
+- **Free-tier embedding has a per-day cap**, and it is the real bottleneck —
+  `EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`. Per-minute pacing
+  (55 req/min, set in `build_index.py`) matters too, but the daily cap is what
+  stops a full corpus build. Budget roughly one day per few hundred chunks on a
+  free key, or use a billed project. `DailyQuotaExhausted` exits immediately
+  rather than retrying into a wall.
 - **Tier B never ships prose.** Only vectors, citations, and a keyword
   signature. `tests/test_tiers.py` guards this; do not relax it.
 - **`GEMINI_EMBED_DIMS` must match `meta.json`.** `retrieve.ts` throws rather
   than returning silently wrong cosine scores.
+- **Several NCERT directory labels do not match their PDFs.** Examples found:
+  `keps1dd` contains *Political Theory* (not *Indian Constitution at Work*),
+  `kepy1dd` contains Psychology, and the Class X `jess*` subjects are rotated.
+  Codex is auditing the manifest. Do not rename corpus directories until the
+  active embed process exits; vectors are content-addressed and can be reused.
 
 ## Verification
 

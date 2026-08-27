@@ -159,6 +159,14 @@ def _retry_delay(exc: Exception) -> float:
     return float(match.group(1)) + 1.0 if match else 0.0
 
 
+class DailyQuotaExhausted(RuntimeError):
+    """The per-day free-tier allowance is gone; no amount of waiting helps today."""
+
+
+def _is_daily_quota(exc: Exception) -> bool:
+    return "PerDay" in str(exc)
+
+
 def _normalize(vector: list[float]) -> list[float]:
     """gemini-embedding-001 only returns unit vectors at full 3072 dims."""
     norm = math.sqrt(sum(v * v for v in vector))
@@ -184,6 +192,10 @@ def embed_batch(client, texts: list[str], limiter: RateLimiter) -> list[list[flo
             message = str(exc)
             if "429" not in message and "RESOURCE_EXHAUSTED" not in message:
                 raise
+            # A per-day quota does not reopen in 60 seconds. Backing off against
+            # it just burns hours to arrive at the same place.
+            if _is_daily_quota(exc):
+                raise DailyQuotaExhausted(str(exc)) from exc
             wait = max(_retry_delay(exc), min(120.0, 15.0 * (attempt + 1)))
             print(f"    429 (attempt {attempt + 1}) — waiting {wait:.0f}s", flush=True)
             time.sleep(wait)
@@ -251,6 +263,15 @@ def embed_all(chunks: list[dict], resume: bool = True) -> list[list[float]]:
                 try:
                     vectors = embed_batch(client, [t for _, t in batch], limiter)
                     break
+                except DailyQuotaExhausted:
+                    print(
+                        f"\n  Daily free-tier embedding quota is exhausted."
+                        f"\n  {start:,} of {len(items):,} embedded and cached."
+                        f"\n  Re-run after the quota resets (00:00 Pacific), or set a"
+                        f" billed GEMINI_API_KEY to finish now.",
+                        flush=True,
+                    )
+                    raise SystemExit(0)
                 except RuntimeError:
                     if cooldown is None:
                         print(
