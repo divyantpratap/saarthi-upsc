@@ -118,7 +118,7 @@ function isRateLimit(error: unknown): boolean {
  * released models do this under launch demand. Waiting is pointless when a
  * sibling model is healthy — move on rather than retry the same one.
  */
-function isOverloaded(error: unknown): boolean {
+export function isOverloaded(error: unknown): boolean {
   const message = String(error);
   return (
     /\b(500|502|503|504)\b/.test(message) ||
@@ -183,8 +183,12 @@ async function withRetry<T>(
 }
 
 /** Primary first, then the fallback — but only if it is genuinely different. */
-function modelChain(primary = MODEL): string[] {
-  const usable = [primary, FALLBACK_MODEL, LAST_RESORT_MODEL]
+export function modelChain(
+  primary = MODEL,
+  fallback = FALLBACK_MODEL,
+  lastResort = LAST_RESORT_MODEL,
+): string[] {
+  const usable = [primary, fallback, lastResort]
     .map((model) => model.trim())
     .filter((model, i, all) => model.length > 0 && all.indexOf(model) === i);
   if (!usable.length) throw new GeminiError("No Gemini model configured.", false);

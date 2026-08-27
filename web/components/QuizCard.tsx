@@ -43,12 +43,19 @@ export function QuizCard({
         </span>
       </header>
 
-      <p className="mt-3 whitespace-pre-line text-[16px] leading-relaxed text-ink">
+      <p
+        id={`question-${index}`}
+        className="mt-3 whitespace-pre-line text-[16px] leading-relaxed text-ink"
+      >
         {question.question}
       </p>
 
       {/* One option per row — never side by side. */}
-      <div className="mt-4 flex flex-col gap-2">
+      <fieldset
+        aria-labelledby={`question-${index}`}
+        className="mt-4 flex flex-col gap-2"
+      >
+        <legend className="sr-only">Choose one answer</legend>
         {question.options.map((option, optionIndex) => {
           const isAnswer = optionIndex === question.answerIndex;
           const isPicked = optionIndex === selected;
@@ -65,7 +72,7 @@ export function QuizCard({
           return (
             <label
               key={optionIndex}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition ${tone} ${
+              className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 transition focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand ${tone} ${
                 checked ? "cursor-default" : ""
               }`}
             >
@@ -91,7 +98,7 @@ export function QuizCard({
             </label>
           );
         })}
-      </div>
+      </fieldset>
 
       {!checked ? (
         <button
@@ -103,7 +110,7 @@ export function QuizCard({
           Check answer
         </button>
       ) : (
-        <div className="mt-4">
+        <div className="mt-4" role="status" aria-live="polite" aria-atomic="true">
           <p
             className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12.5px] font-bold ${
               correct

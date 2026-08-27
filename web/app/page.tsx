@@ -105,11 +105,12 @@ export default function AskPage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-3xl flex-col px-6 pb-10 pt-6">
-      <header className="mb-5 flex items-center justify-between border-b border-line pb-3 pl-10">
+      <header className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3 pl-10">
         <p className="text-[13px] text-muted">
           Saarthi / <b className="text-ink">{empty ? "New chat" : mode} </b>
         </p>
-        <div className="flex gap-0.5 rounded-lg border border-line bg-sunken p-0.5">
+        <div className="max-w-full overflow-x-auto rounded-lg border border-line bg-sunken p-0.5">
+          <div className="flex w-max gap-0.5">
           {MODES.map((option) => (
             <button
               key={option}
@@ -125,6 +126,7 @@ export default function AskPage() {
               {option}
             </button>
           ))}
+          </div>
         </div>
       </header>
 

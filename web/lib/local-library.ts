@@ -15,6 +15,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 
 import { bm25Search, buildBm25, tokenize } from "./tokenize";
+import type { Mcq } from "./types";
 
 export interface LocalDocument {
   id: string;
@@ -32,27 +33,66 @@ export interface LocalChunk {
   text: string;
 }
 
+export interface LocalMockTest {
+  id: string;
+  title: string;
+  subject: string;
+  minutes: number;
+  createdAt: number;
+  questions: Mcq[];
+}
+
 interface SaarthiDB extends DBSchema {
   documents: { key: string; value: LocalDocument };
   chunks: { key: string; value: LocalChunk; indexes: { docId: string } };
+  mockTests: { key: string; value: LocalMockTest };
 }
 
 const DB_NAME = "saarthi-library";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<SaarthiDB>> | null = null;
 
 function db() {
   if (!dbPromise) {
     dbPromise = openDB<SaarthiDB>(DB_NAME, DB_VERSION, {
-      upgrade(database) {
-        database.createObjectStore("documents", { keyPath: "id" });
-        const chunks = database.createObjectStore("chunks", { keyPath: "id" });
-        chunks.createIndex("docId", "docId");
+      upgrade(database, oldVersion) {
+        if (oldVersion < 1) {
+          database.createObjectStore("documents", { keyPath: "id" });
+          const chunks = database.createObjectStore("chunks", { keyPath: "id" });
+          chunks.createIndex("docId", "docId");
+        }
+        if (oldVersion < 2) {
+          database.createObjectStore("mockTests", { keyPath: "id" });
+        }
       },
     });
   }
   return dbPromise;
+}
+
+export async function addMockTest(
+  input: Omit<LocalMockTest, "id" | "createdAt">,
+): Promise<LocalMockTest> {
+  const database = await db();
+  const test: LocalMockTest = {
+    ...input,
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: Date.now(),
+  };
+  await database.put("mockTests", test);
+  return test;
+}
+
+export async function listMockTests(): Promise<LocalMockTest[]> {
+  const database = await db();
+  const tests = await database.getAll("mockTests");
+  return tests.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function removeMockTest(id: string): Promise<void> {
+  const database = await db();
+  await database.delete("mockTests", id);
 }
 
 /** Invalidated on every write; rebuilt lazily on the next search. */

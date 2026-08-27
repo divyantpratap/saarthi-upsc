@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { IndexStatus } from "./IndexStatus";
 import { SidebarPanels } from "./SidebarPanels";
@@ -42,8 +42,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [override, setOverride] = useState<boolean | null>(null);
   const open = override ?? !narrow;
 
+  useEffect(() => {
+    if (!narrow || !open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOverride(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [narrow, open]);
+
   return (
     <div className="flex h-full">
+      {narrow && open && (
+        <button
+          type="button"
+          onClick={() => setOverride(false)}
+          aria-label="Close navigation"
+          className="fixed inset-0 z-30 cursor-default bg-black/20"
+        />
+      )}
       {/*
        * The toggle lives outside the sidebar, so it survives collapse. The
        * Streamlit build hid the only expand control along with the header,
@@ -53,20 +70,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         type="button"
         onClick={() => setOverride(!open)}
         aria-expanded={open}
+        aria-controls="primary-sidebar"
         aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
         className="fixed top-4 left-4 z-50 grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-muted shadow-sm transition hover:text-ink hover:border-line-strong"
-        style={{ left: open ? "17.25rem" : "1rem" }}
+        style={{
+          left:
+            open && narrow
+              ? "min(15.25rem, calc(100vw - 5.75rem))"
+              : open
+                ? "17.25rem"
+                : "1rem",
+        }}
       >
         <span className="text-sm leading-none">{open ? "‹" : "›"}</span>
       </button>
 
       <aside
+        id="primary-sidebar"
+        aria-label="Primary navigation"
+        aria-hidden={!open}
+        inert={!open}
         className={`${
-          open ? "w-[18rem]" : "w-0"
+          open
+            ? narrow
+              ? "fixed inset-y-0 left-0 z-40 w-[min(18rem,calc(100vw-3rem))] shadow-xl"
+              : "relative w-[18rem]"
+            : "relative w-0"
         } shrink-0 overflow-hidden border-r border-line bg-sunken transition-[width] duration-200`}
       >
-        <div className="flex h-full w-[18rem] flex-col px-4 py-5">
-          <Link href="/" className="mb-7 flex items-center gap-3 px-1">
+        <div
+          className={`flex h-full flex-col px-4 py-5 ${
+            narrow ? "w-[min(18rem,calc(100vw-3rem))]" : "w-[18rem]"
+          }`}
+        >
+          <Link
+            href="/"
+            onClick={() => narrow && setOverride(false)}
+            className="mb-7 flex items-center gap-3 px-1"
+          >
             <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-brand font-display text-xl text-white">
               S
             </span>
@@ -93,6 +134,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => narrow && setOverride(false)}
                   aria-current={active ? "page" : undefined}
                   className={`flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${
                     active
@@ -116,7 +158,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <main
+        aria-hidden={narrow && open}
+        inert={narrow && open}
+        className="min-w-0 flex-1 overflow-y-auto"
+      >
+        {children}
+      </main>
     </div>
   );
 }

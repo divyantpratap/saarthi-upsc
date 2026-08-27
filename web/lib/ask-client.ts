@@ -58,6 +58,15 @@ export async function ask(
     signal,
   });
 
+  if (!response.ok) {
+    const message = (await response.text()).trim();
+    handlers.onError?.(
+      message || `The server returned ${response.status}.`,
+      response.status === 429,
+    );
+    return;
+  }
+
   if (!response.body) {
     handlers.onError?.("No response from the server.", false);
     return;

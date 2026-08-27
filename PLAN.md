@@ -5,7 +5,7 @@
 > the repo. Every task is self-contained: file paths, commands and verification
 > are stated inline so none of it needs re-deriving.
 
-**Last updated:** 2026-08-27 20:15 IST
+**Last updated:** 2026-08-27 21:02 IST
 **Live:** https://saarthi-upsc.vercel.app · **Branch:** `main` (auto-deploys)
 **Local:** `npm run dev --prefix web` · **Python:** `.venv/bin/python`
 
@@ -31,15 +31,18 @@ independent and can be done in any order or in parallel.
 
 ## T1 · Build and commit the Tier A index — *unblocks the product*
 
-The deployed app carries a **798-chunk dev index** whose only quotable source is
-`sample_study_notes.txt`. Answers are honest about having no material, but the
-app cannot demo until this lands.
+The local working tree now carries a complete **9,486-passage Tier A lexical
+index** across 177 chapter/PDF sources. It makes zero document- or query-embed
+calls and passes the 10-question golden retrieval gate. The live deployment
+still carries the 798-chunk dev index because the owner requested no push.
 
 **The constraint, measured across two exhausted keys:** the Gemini free tier
 yields roughly **500 embed requests per key per day**. Tier A is **9,486
 chunks**. This is a property of the API key, not of who runs the script — the
-same limit applies to any agent. `ingest/.build/embeddings.sqlite3` already
-holds **940 vectors (9.9%)**, content-addressed, so nothing is ever re-embedded.
+same limit applies to any agent. `ingest/.build/embeddings.sqlite3` now holds
+**950 vectors**. Of those, 773 match the current Tier A corpus (770 Constitution
++ 3 notes); another 110 current chunks are duplicates and do not need their own
+embed call. Nothing is ever re-embedded.
 
 | Route | Cost | Time |
 |---|---|---|
@@ -57,13 +60,23 @@ holds **940 vectors (9.9%)**, content-addressed, so nothing is ever re-embedded.
 
 Re-running is always safe and resumes from the cache. On exhaustion the script
 exits 0 with `DailyQuotaExhausted` and a message — that is expected, not a bug.
+The `Finish Saarthi index` thread heartbeat resumes the optional dense-vector
+upgrade daily at 12:40 IST, just after the current Pacific-time quota reset. It
+finishes semantic Tier A before starting Tier B, updates this file after every
+run, and never pushes. The complete lexical artifact stays usable meanwhile.
 
-**When it completes:**
+**Completed lexical build:**
+
+```bash
+.venv/bin/python ingest/build_index.py --only-open --lexical-only
+```
+
+**Dense-upgrade completion checklist:**
 1. Check `web/public/index/meta.json` — `count` should match the run, and `dims`
    must be `768`.
 2. `npm run test:retrieval --prefix web` — the golden-retrieval harness gates on
    a real open index and currently skips.
-3. Commit `web/public/index/` and push. Vercel redeploys automatically.
+3. Commit `web/public/index/`. Do not push until the owner requests it.
 4. Confirm live: `curl -s https://saarthi-upsc.vercel.app/api/status` should show
    the new `chunks` and `openChunks`.
 
@@ -75,25 +88,29 @@ index ships; the PDFs never enter the repo.
 
 | Task | Owner | State |
 |---|---|---|
-| T1 · Tier A index | Codex | claimed; quota attempt after safety checks |
-| T2 · Public endpoint rate limits | Codex | implementing |
-| T3 · Reliability tests | Codex | claimed |
-| T4 · Retire Streamlit | Codex | claimed; preserve legacy branch first |
-| T5 · Custom mock tests | Codex | claimed |
-| T6 · Tier B backfill | Codex | claimed; runs only after T1 writer exits |
-| T7 · Responsive + accessibility | Codex | claimed |
-| T8 · Answering-model status | Codex | claimed |
+| T1 · Tier A index | Codex | done locally; 9,486-passage lexical artifact, golden 10/10 |
+| T2 · Public endpoint rate limits | Codex | done; focused tests pass |
+| T3 · Reliability tests | Codex | done; failover/deadline tests pass |
+| T4 · Retire Streamlit | Codex | done; legacy branch preserved, 16 tests pass |
+| T5 · Custom mock tests | Codex | done; browser persistence verified |
+| T6 · Tier B backfill | Codex | semantic upgrade queued daily; 16,342 chunks scanned |
+| T7 · Responsive + accessibility | Codex | done; 375/768 browser checks pass |
+| T8 · Answering-model status | Codex | done; configured vs actual is explicit |
 
 ## Done
 
 - [x] **Index pipeline** — `ingest/build_index.py`, `ingest/tiers.py`. Chunks,
       embeds at 768 dims, emits `meta.json` / `vectors.f16.bin` /
       `chunks.{a,b}.json.gz` into `web/public/index/`.
+- [x] **Complete Tier A coverage without quota (T1)** — lexical-only mode emits
+      all 9,486 quotable passages with explicit `vectorCount: 0`, skips query
+      embeddings at runtime, and preserves the cache for a later hybrid upgrade.
+      Golden retrieval: 10/10.
 - [x] **Embedding progress accounting** — cache hits and duplicate chunks are
-      reported separately; only 13 current-corpus vectors are reusable.
+      reported separately; 773 current Tier A chunks are cached.
 - [x] **Chunker bug** — texts shorter than `CHUNK_SIZE` emitted ~120
       near-duplicate crumbs. 6 PDFs produced 55,748 chunks instead of 1,752.
-      Fixed in `src/ingest/chunker.py`; tests in `tests/test_chunker.py`.
+      Fixed in `ingest/chunker.py`; tests in `tests/test_chunker.py`.
 - [x] **Tiering by path, not filename** — filename matching promoted a coaching
       compilation and a file matching "parliament" to publishable. Now a
       directory allowlist (`ncert`, `constitution`, `open`, `govt`).
@@ -122,12 +139,44 @@ index ships; the PDFs never enter the repo.
 - [x] **Uploads** — `/library`. Parsed in-browser with pdfjs (pinned past
       GHSA-hq66-cqwq-w95j), chunked, stored in IndexedDB, matched with BM25 and
       sent as context. Verified: 7-page PDF → 22 passages.
+- [x] **Public endpoint limits (T2)** — per-IP token buckets protect the shared
+      key at 20 asks / 10 min and 10 drills / 10 min; BYOK is exempt and 429
+      text is rendered by both clients.
+- [x] **Reliability coverage (T3)** — deterministic SDK stubs cover overload
+      classification, model-chain hygiene, stream commit/restart/partial-answer
+      behavior, and the structured-output wall deadline.
+- [x] **Streamlit retirement (T4)** — preserved on `streamlit-legacy`; removed
+      the legacy runtime/deploy surface from `main`, moved reusable chunk/PDF
+      code into `ingest/`, and isolated its requirements. Python: 16/16 pass.
+- [x] **Custom mocks (T5)** — browser-local builder, IndexedDB v2 persistence,
+      deletion, and normal `QuizCard` attempt flow. Create → save → reload was
+      browser-verified.
+- [x] **Responsive/accessibility (T7)** — dismissible sidebar overlay below
+      900px, mobile drill layout, visible focus, keyboard radios, `aria-live`
+      verdicts, and reduced-motion handling. Verified at 375×812 and 768×900.
+- [x] **Model attribution (T8)** — sidebar now labels the primary as
+      `Configured`; streamed answers retain the model that actually served.
+
+## Original issue acceptance check
+
+| Issue | Status | Evidence |
+|---|---|---|
+| i · panels/sidebar/UI | fixed | controlled panels, reopenable mobile overlay, Escape/backdrop close, responsive visual check |
+| ii · embedding 429 at boot | fixed | the deployed runtime only reads committed artifacts; zero boot-time embed path |
+| iii · answer model busy | fixed with provider caveat | tested three-model failover; each answer names the serving model |
+| iv · drill placement | fixed | dedicated `/drill` route |
+| v · MCQ interaction | fixed | sealed question state, keyboard radios, explicit check/verdict/explanation |
+| vii · requested model | provider caveat | 3.7 stays configured; 3.6/2.5 failover remains necessary while 3.7 is overloaded |
+| viii · blocked Ask nav | fixed | active navigation state |
+| ix · sidebar reopen | fixed | verified at 375px, including Escape close |
+| x · everything inbuilt | fixed locally | all 9,486 Tier A passages are prebuilt and golden retrieval passes; live awaits an owner-initiated push |
+| xi · PDFs + custom mocks | fixed within tier policy | uploads and custom mocks work; source PDFs stay gitignored and only derived tier-safe artifacts ship |
 
 ---
 
-## T2–T8 · Remaining work (no Gemini quota required)
+## T2–T8 · Implementation records
 
-Each item is self-contained. Claim one by adding a row to **Now in progress**.
+The original specifications are retained below as implementation context.
 
 ### T2 · Guard the public endpoints against abuse — *highest value of these*
 
@@ -213,6 +262,10 @@ Add a second job for the web app: `npm ci`, `npm run lint`, `npx tsc --noEmit`,
 `npx vitest run`, `npm run build`, with `working-directory: web`. No secrets
 needed — the build makes no Gemini calls.
 
+**Done 2026-08-27:** CI now has independent offline-pipeline and Next.js jobs;
+the Python job installs `ingest/requirements.txt`, and the web job runs every
+gate above on Node 22.
+
 ### T10 · Decide what happens to the Streamlit deployment
 
 `saarthi-upsc.streamlit.app` is still live and serving the old code, with all
@@ -247,7 +300,7 @@ names the model that actually answered.
 
 - **Free-tier embedding has a per-day cap**, and it is the real bottleneck —
   `EmbedContentRequestsPerDayPerProjectPerModel-FreeTier`. Per-minute pacing
-  (55 req/min, set in `build_index.py`) matters too, but the daily cap is what
+  (85 req/min, set in `build_index.py`) matters too, but the daily cap is what
   stops a full corpus build. Budget roughly one day per few hundred chunks on a
   free key, or use a billed project. `DailyQuotaExhausted` exits immediately
   rather than retrying into a wall.
@@ -263,12 +316,14 @@ names the model that actually answered.
 ## Verification
 
 ```bash
-.venv/bin/python -m pytest tests/ -q     # 24 tests
-npx vitest run --prefix web              # chunker parity
+.venv/bin/python -m pytest tests/ -q     # 17 tests
+npx vitest run --prefix web              # 47 pass, including golden 10/10
 npm run lint --prefix web && npx tsc --noEmit
 npm run build --prefix web
 ```
 
-Last full run (14:57 IST): 24 Python tests passed; 7 Vitest tests passed and
-the 10 bundled-index cases were correctly gated; ESLint, TypeScript, shell
-syntax, diff checks, and an isolated Next.js production build all passed.
+Last full run (21:00 IST): 17 Python tests and 47 Vitest tests passed, including
+golden retrieval 10/10. ESLint, TypeScript, diff checks, the optimized Next.js
+build, artifact/privacy assertions, browser checks at 375/768, custom-test
+persistence, and keyboard MCQ marking all passed. Local `/api/status` reports
+9,486 open chunks, 177 sources, and `retrievalMode: lexical`.

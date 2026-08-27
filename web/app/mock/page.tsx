@@ -1,9 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { CustomTestBuilder } from "@/components/CustomTestBuilder";
 import { QuizCard } from "@/components/QuizCard";
-import { QUESTIONS, SUBJECTS, type BankQuestion } from "@/lib/question-bank";
+import {
+  listMockTests,
+  removeMockTest,
+  type LocalMockTest,
+} from "@/lib/local-library";
+import { QUESTIONS, SUBJECTS } from "@/lib/question-bank";
+import type { Mcq } from "@/lib/types";
 
 /** UPSC Prelims marking: +2 for a correct answer, −1/3 of that for a wrong one. */
 const CORRECT_MARK = 2;
@@ -15,7 +22,8 @@ interface Test {
   kind: string;
   subject: string;
   minutes: number;
-  questions: BankQuestion[];
+  questions: Mcq[];
+  custom?: boolean;
 }
 
 function buildTests(): Test[] {
@@ -42,9 +50,33 @@ function buildTests(): Test[] {
 }
 
 export default function MockPage() {
-  const tests = useMemo(() => buildTests(), []);
+  const builtInTests = useMemo(() => buildTests(), []);
+  const [customTests, setCustomTests] = useState<LocalMockTest[]>([]);
+  const [building, setBuilding] = useState(false);
+  const [storageNotice, setStorageNotice] = useState<string | null>(null);
   const [active, setActive] = useState<Test | null>(null);
   const [score, setScore] = useState({ right: 0, wrong: 0 });
+
+  useEffect(() => {
+    let cancelled = false;
+    listMockTests()
+      .then((saved) => {
+        if (!cancelled) setCustomTests(saved);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setStorageNotice(`Saved tests are unavailable: ${String(error)}`);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const tests: Test[] = [
+    ...customTests.map((test) => ({ ...test, kind: "Custom", custom: true })),
+    ...builtInTests,
+  ];
 
   if (active) {
     const attempted = score.right + score.wrong;
@@ -52,7 +84,7 @@ export default function MockPage() {
 
     return (
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-6">
-        <header className="flex items-start justify-between gap-4 border-b border-line pb-5 pl-10">
+        <header className="flex flex-col gap-4 border-b border-line pb-5 pl-10 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-display text-[30px] leading-tight tracking-[-0.03em]">
               {active.title}
@@ -88,7 +120,7 @@ export default function MockPage() {
         <div className="mt-4 flex flex-col gap-4">
           {active.questions.map((question, index) => (
             <QuizCard
-              key={question.id}
+              key={`${question.question.slice(0, 48)}-${index}`}
               question={question}
               index={index}
               total={active.questions.length}
@@ -120,16 +152,47 @@ export default function MockPage() {
         </p>
       </header>
 
+      <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-brand-line bg-brand-tint p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-[15px] font-semibold text-brand-dark">
+            Bring your own question set
+          </h2>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+            Create a reusable mock that stays private in this browser.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setBuilding((current) => !current)}
+          aria-expanded={building}
+          className="shrink-0 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-brand-dark"
+        >
+          {building ? "Close builder" : "Create custom test"}
+        </button>
+      </div>
+
+      {building && (
+        <CustomTestBuilder
+          onCancel={() => setBuilding(false)}
+          onSaved={(test) => {
+            setCustomTests((current) => [test, ...current]);
+            setBuilding(false);
+            setStorageNotice("Custom test saved in this browser.");
+          }}
+        />
+      )}
+
+      {storageNotice && (
+        <p role="status" className="mt-4 rounded-xl bg-sunken px-3.5 py-2.5 text-xs text-muted">
+          {storageNotice}
+        </p>
+      )}
+
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         {tests.map((test) => (
-          <button
+          <article
             key={test.id}
-            type="button"
-            onClick={() => {
-              setActive(test);
-              setScore({ right: 0, wrong: 0 });
-            }}
-            className="group rounded-2xl border border-line bg-surface p-4 text-left transition hover:border-brand-line hover:shadow-sm"
+            className="group flex flex-col rounded-2xl border border-line bg-surface p-4 transition hover:border-brand-line hover:shadow-sm"
           >
             <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-brand">
               {test.kind}
@@ -143,10 +206,39 @@ export default function MockPage() {
                 {test.minutes} min
               </span>
             </p>
-            <span className="mt-3 inline-block text-[12.5px] font-semibold text-brand">
-              Begin test →
-            </span>
-          </button>
+            <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setActive(test);
+                  setScore({ right: 0, wrong: 0 });
+                }}
+                className="text-[12.5px] font-semibold text-brand"
+              >
+                Begin test →
+              </button>
+              {test.custom && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void removeMockTest(test.id)
+                      .then(() =>
+                        setCustomTests((current) =>
+                          current.filter((item) => item.id !== test.id),
+                        ),
+                      )
+                      .catch((error) =>
+                        setStorageNotice(`Could not delete test: ${String(error)}`),
+                      );
+                  }}
+                  aria-label={`Delete ${test.title}`}
+                  className="text-xs font-semibold text-wrong"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          </article>
         ))}
       </div>
     </div>

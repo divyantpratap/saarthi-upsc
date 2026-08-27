@@ -30,6 +30,12 @@ export default function DrillPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ topic, count, apiKey: readApiKey() }),
       });
+      if (!response.ok) {
+        const message = (await response.text()).trim();
+        setNotice(message || `Could not start the drill (${response.status}).`);
+        setQuestions([]);
+        return;
+      }
       const data = await response.json();
       setQuestions(data.questions ?? []);
       setNotice(data.notice ?? null);
@@ -87,7 +93,7 @@ export default function DrillPage() {
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-0.5 rounded-lg border border-line bg-sunken p-0.5">
             {COUNTS.map((option) => (
               <button
