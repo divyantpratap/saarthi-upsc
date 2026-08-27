@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { QuizCard } from "@/components/QuizCard";
+import { ThinkingStatus } from "@/components/ThinkingStatus";
 import { SUBJECTS } from "@/lib/question-bank";
 import type { Mcq } from "@/lib/types";
 import { readApiKey } from "@/lib/use-api-key";
@@ -177,6 +178,7 @@ export default function DrillPage() {
 
       {busy && (
         <div className="mt-6 flex flex-col gap-4">
+          <ThinkingStatus compact />
           {Array.from({ length: count }).map((_, i) => (
             <div
               key={i}

@@ -182,6 +182,26 @@ async function withRetry<T>(
   throw new GeminiError(String(last), isRateLimit(last));
 }
 
+/**
+ * The model that last answered successfully on this lambda.
+ *
+ * The configured primary can be down for hours at a time — gemini-3.7-flash has
+ * failed essentially every request since launch — and trying it first each time
+ * spends the whole per-call timeout before a working model starts. Remembering
+ * the last success lets a warm lambda skip straight to it, while a cold one
+ * still gives the primary its chance.
+ */
+let lastGoodModel: string | null = null;
+
+export function noteModelSucceeded(model: string): void {
+  lastGoodModel = model;
+}
+
+/** Test seam: module state deliberately outlives a request. */
+export function resetModelMemory(): void {
+  lastGoodModel = null;
+}
+
 /** Primary first, then the fallback — but only if it is genuinely different. */
 export function modelChain(
   primary = MODEL,
@@ -194,6 +214,19 @@ export function modelChain(
   if (!usable.length) throw new GeminiError("No Gemini model configured.", false);
   return usable;
 }
+/**
+ * The runtime chain, ordered by what actually works.
+ *
+ * `modelChain` stays a pure function of configuration so it can be tested
+ * directly. This wrapper adds the one thing configuration cannot know: which
+ * model answered last on this lambda.
+ */
+function activeChain(): string[] {
+  const chain = modelChain();
+  if (!lastGoodModel || !chain.includes(lastGoodModel)) return chain;
+  return [lastGoodModel, ...chain.filter((model) => model !== lastGoodModel)];
+}
+
 
 export async function embedQuery(
   text: string,
@@ -239,7 +272,7 @@ export async function* generateStream(
   },
 ): AsyncGenerator<string> {
   const ai = client(apiKey);
-  const models = modelChain();
+  const models = activeChain();
   let last: unknown;
 
   for (const model of models) {
@@ -275,6 +308,7 @@ export async function* generateStream(
         }
         // A complete answer shorter than the commit point still counts.
         if (buffered) yield buffered;
+        noteModelSucceeded(model);
         return;
       } catch (error) {
         last = error;
@@ -318,7 +352,7 @@ export async function generateJson<T>(
   const deadline = Date.now() + JSON_DEADLINE_MS;
   let last: unknown;
 
-  for (const model of modelChain()) {
+  for (const model of activeChain()) {
     const remaining = deadline - Date.now();
     if (remaining < MIN_ATTEMPT_MS) break; // not enough left to be worth trying
     try {
@@ -337,7 +371,9 @@ export async function generateJson<T>(
       });
       const text = response.text;
       if (!text) throw new GeminiError("Empty structured response.", false);
-      return JSON.parse(text) as T;
+      const parsed = JSON.parse(text) as T;
+      noteModelSucceeded(model);
+      return parsed;
     } catch (error) {
       last = error;
       const summary = String(error).slice(0, 160).replace(/\s+/g, " ");

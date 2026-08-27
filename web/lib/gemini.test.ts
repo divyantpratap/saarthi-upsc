@@ -31,6 +31,7 @@ import {
   MODEL,
   modelChain,
   PartialAnswer,
+  resetModelMemory,
 } from "./gemini";
 
 async function* chunks(...values: Array<string | Error>) {
@@ -48,6 +49,10 @@ async function collect(stream: AsyncGenerator<string>): Promise<string> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // generateStream and generateJson remember which model last answered, so a
+  // warm lambda can skip a model that is down. That memory outlives a request
+  // by design and would otherwise carry between tests and reorder the chain.
+  resetModelMemory();
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
   vi.spyOn(console, "error").mockImplementation(() => undefined);
 });

@@ -101,6 +101,11 @@ export async function POST(request: Request) {
 
         // A failed query embedding degrades to lexical-only retrieval rather
         // than failing the request — BM25 alone still finds real passages.
+        //
+        // Only worth flagging when it is unexpected. While the bundled index
+        // carries no vectors at all, lexical retrieval is simply how the app
+        // works, and a warning on every answer trains the reader to ignore
+        // warnings. The sidebar already states the index mode.
         let queryVector: Float32Array | undefined;
         if (hasSemanticIndex(meta)) {
           try {
@@ -109,8 +114,6 @@ export async function POST(request: Request) {
             if (!(error instanceof GeminiError)) throw error;
             send({ type: "notice", value: "keyword-only retrieval" });
           }
-        } else {
-          send({ type: "notice", value: "keyword-only retrieval" });
         }
 
         const retrieved = await retrieve(question, {

@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { SourceList } from "@/components/SourceList";
+import { ThinkingStatus, useThinkingLabel } from "@/components/ThinkingStatus";
 import { ask, type Citation } from "@/lib/ask-client";
 import type { StudyMode } from "@/lib/types";
 
@@ -52,6 +53,7 @@ export default function AskPage() {
   const [mode, setMode] = useState<StudyMode>("Learn");
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const submitLabel = useThinkingLabel(busy);
   const endRef = useRef<HTMLDivElement>(null);
 
   const submit = useCallback(
@@ -172,10 +174,7 @@ export default function AskPage() {
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <p className="flex items-center gap-2 text-[13px] text-muted">
-                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-brand" />
-                    Finding the strongest passages…
-                  </p>
+<ThinkingStatus />
                 )}
                 {!message.error && (
                   <>
@@ -220,7 +219,7 @@ export default function AskPage() {
             disabled={busy || !draft.trim()}
             className="mt-1.5 w-full rounded-[11px] bg-brand py-2.5 text-[14px] font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {busy ? "Thinking…" : "Ask Saarthi →"}
+            {submitLabel}
           </button>
         </form>
       </div>
