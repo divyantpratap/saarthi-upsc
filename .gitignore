@@ -20,3 +20,10 @@ data/scraped/
 ingest_log.txt
 logs/
 venv/
+
+# Next.js rebuild
+web/node_modules/
+web/.next/
+web/.env.local
+web/next-env.d.ts
+ingest/.build/

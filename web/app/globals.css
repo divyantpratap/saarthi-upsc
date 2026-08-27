@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/*
+ * Saarthi's palette. Deep green carries the brand, saffron is reserved for
+ * emphasis and correctness signals, and the ground is warm paper rather than
+ * white so long study sessions stay comfortable.
+ */
+@theme {
+  --color-paper: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-sunken: #eeeee9;
+  --color-ink: #1c2824;
+  --color-muted: #68736f;
+  --color-faint: #8a928e;
+  --color-line: #dedfd9;
+  --color-line-strong: #c7cbc4;
+
+  --color-brand: #1f6b54;
+  --color-brand-dark: #17513f;
+  --color-brand-tint: #e5f0e9;
+  --color-brand-line: #bcd2c6;
+
+  --color-saffron: #d97735;
+  --color-saffron-tint: #fdf1e7;
+
+  --color-correct: #1f6b54;
+  --color-correct-tint: #e5f0e9;
+  --color-wrong: #b3402f;
+  --color-wrong-tint: #fbeae7;
+
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-newsreader), ui-serif, Georgia, serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Long-form answer text. Markdown arrives as HTML from the streaming route. */
+.prose-answer {
+  font-size: 0.975rem;
+  line-height: 1.72;
+}
+.prose-answer > * + * {
+  margin-top: 0.85rem;
+}
+.prose-answer h2,
+.prose-answer h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 1.5rem;
+}
+.prose-answer h2 {
+  font-size: 1.2rem;
+}
+.prose-answer h3 {
+  font-size: 1.05rem;
+}
+.prose-answer ul,
+.prose-answer ol {
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.prose-answer ul {
+  list-style: disc;
+}
+.prose-answer ol {
+  list-style: decimal;
+}
+.prose-answer strong {
+  font-weight: 600;
+  color: var(--color-brand-dark);
+}
+.prose-answer code {
+  background: var(--color-sunken);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+
+@keyframes saarthi-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: saarthi-rise 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}

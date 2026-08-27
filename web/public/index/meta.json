@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "fingerprint": "71c03afb905509b8",
+  "embedModel": "gemini-embedding-001",
+  "dims": 768,
+  "count": 798,
+  "openCount": 3,
+  "restrictedCount": 795,
+  "builtAt": "2026-08-27T08:04:34Z",
+  "sources": {
+    "notes:sample_study_notes.txt": {
+      "file": "sample_study_notes.txt",
+      "subject": "Notes",
+      "tier": "A",
+      "chunks": 3
+    },
+    "pdf:AFCAT/Air Force Common Admission Test by R Gupta.pdf": {
+      "file": "AFCAT/Air Force Common Admission Test by R Gupta.pdf",
+      "subject": "International Relations",
+      "tier": "B",
+      "chunks": 150
+    },
+    "pdf:AFCAT/Arihant AFCAT (Flying technical & ground).pdf": {
+      "file": "AFCAT/Arihant AFCAT (Flying technical & ground).pdf",
+      "subject": "General Studies",
+      "tier": "B",
+      "chunks": 645
+    }
+  }
+}

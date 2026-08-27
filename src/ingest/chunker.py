@@ -22,8 +22,11 @@ def chunk_text(text: str, source: str, metadata: dict | None = None) -> list[dic
         target_end = min(start + CHUNK_SIZE, len(text))
         end = target_end
         if target_end < len(text):
-            paragraph_end = text.rfind("\n\n", start + CHUNK_SIZE // 2, target_end)
-            sentence_end = max(text.rfind(". ", start, target_end), text.rfind("? ", start, target_end))
+            # Search for a boundary only in the back half, so a full stop near
+            # the start of the window can never shrink a chunk to a crumb.
+            floor = start + CHUNK_SIZE // 2
+            paragraph_end = text.rfind("\n\n", floor, target_end)
+            sentence_end = max(text.rfind(". ", floor, target_end), text.rfind("? ", floor, target_end))
             end = paragraph_end if paragraph_end > start else (sentence_end + 1 if sentence_end > start else target_end)
         piece = text[start:end].strip()
         if piece:
@@ -41,9 +44,9 @@ def chunk_text(text: str, source: str, metadata: dict | None = None) -> list[dic
                 }
             )
             idx += 1
+        if end >= len(text):
+            break  # text consumed; stepping back by the overlap would re-emit its tail
         start = max(end - CHUNK_OVERLAP, start + 1)
-        if start >= len(text):
-            break
 
     return chunks
 

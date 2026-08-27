@@ -1,0 +1,332 @@
+"""Build the shipped retrieval index.
+
+Runs locally, never on Vercel. Walks the corpus, chunks it with the same
+splitter the Streamlit app used, embeds every chunk with Gemini at 768
+dimensions, and emits artifacts the TypeScript runtime loads directly:
+
+    meta.json        dims, model, counts, per-source manifest
+    vectors.f16.bin  float16, row-major, one row per chunk
+    chunks.a.json.gz Tier A: full text (freely redistributable)
+    chunks.b.json.gz Tier B: citations + keyword signature, no prose
+
+Embedding is the expensive half: one request per chunk against a 100/min free
+tier ceiling. The job is rate-limited, honours the API's own retryDelay, and
+checkpoints after every batch so a crash or a 429 storm never loses work.
+
+    python ingest/build_index.py --limit 40      # quick smoke build
+    python ingest/build_index.py                 # full corpus
+    python ingest/build_index.py --resume        # continue after interruption
+"""
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import json
+import math
+import re
+import sys
+import time
+from collections import Counter
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "ingest"))
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from settings import DATA_DIR, GEMINI_EMBED_MODEL, PDF_DIR  # noqa: E402
+from src.ingest.chunker import chunk_text  # noqa: E402
+from src.ingest.pdf_parser import list_pdfs, pdf_to_documents  # noqa: E402
+from tiers import OPEN, RESTRICTED, classify  # noqa: E402
+
+OUT_DIR = ROOT / "web" / "public" / "index"
+BUILD_DIR = ROOT / "ingest" / ".build"
+EMBED_DIMS = 768
+BATCH_SIZE = 20
+REQUESTS_PER_MINUTE = 90  # headroom under the 100/min free-tier ceiling
+KEYWORD_SIGNATURE_SIZE = 18
+
+_STOPWORDS = frozenset(
+    """a an and are as at be by for from has have in is it its of on or that the
+    to was were will with which this these those they their there than then such
+    can could should would may might must not but also into over under about""".split()
+)
+_TOKEN = re.compile(r"[a-z][a-z0-9]{2,}")
+
+
+# ---------------------------------------------------------------- collection
+
+
+def _keyword_signature(text: str, size: int = KEYWORD_SIGNATURE_SIZE) -> list[str]:
+    """Top terms for a chunk, for lexical matching without shipping the prose.
+
+    Tier B chunks travel without their text, so BM25 would otherwise be blind to
+    every commercial title. A bag of the most frequent content words keeps those
+    chunks findable while carrying no reconstructable sentence.
+    """
+    counts = Counter(t for t in _TOKEN.findall(text.lower()) if t not in _STOPWORDS)
+    return [term for term, _ in counts.most_common(size)]
+
+
+def collect_chunks(limit: int | None = None) -> list[dict]:
+    """Chunk the whole corpus deterministically, tier by tier."""
+    chunks: list[dict] = []
+
+    for txt_path in sorted(DATA_DIR.glob("*.txt")):
+        if txt_path.name == "sample_urls.txt":
+            continue
+        text = txt_path.read_text(encoding="utf-8")
+        if not text.strip():
+            continue
+        for chunk in chunk_text(
+            text,
+            f"notes:{txt_path.name}",
+            {"type": "notes", "filename": txt_path.name, "subject": "Notes"},
+        ):
+            chunk["tier"] = classify(txt_path.name, "notes")
+            chunks.append(chunk)
+
+    pdfs = list_pdfs(PDF_DIR)
+    if limit:
+        pdfs = pdfs[:limit]
+    for pdf_path in pdfs:
+        for document in pdf_to_documents(pdf_path):
+            tier = classify(document["metadata"]["filename"], "pdf")
+            for chunk in chunk_text(
+                document["text"], document["source"], document["metadata"]
+            ):
+                chunk["tier"] = tier
+                chunks.append(chunk)
+
+    chunks.sort(key=lambda c: c["id"])  # stable order => stable checkpoints
+    return chunks
+
+
+def corpus_fingerprint(chunks: list[dict]) -> str:
+    digest = hashlib.sha256()
+    digest.update(f"{GEMINI_EMBED_MODEL}:{EMBED_DIMS}:{len(chunks)}".encode())
+    for chunk in chunks[::37]:  # sample: full hashing of 8k chunks buys nothing
+        digest.update(chunk["id"].encode())
+    return digest.hexdigest()[:16]
+
+
+# ----------------------------------------------------------------- embedding
+
+
+class RateLimiter:
+    """Sliding-window limiter; the free tier counts one request per chunk."""
+
+    def __init__(self, per_minute: int) -> None:
+        self.per_minute = per_minute
+        self._times: list[float] = []
+
+    def acquire(self, count: int) -> None:
+        now = time.monotonic()
+        self._times = [t for t in self._times if now - t < 60.0]
+        if len(self._times) + count > self.per_minute:
+            sleep_for = 60.0 - (now - self._times[0]) + 0.5
+            if sleep_for > 0:
+                print(f"    rate limit: pausing {sleep_for:.0f}s")
+                time.sleep(sleep_for)
+            self._times = []
+        self._times.extend([time.monotonic()] * count)
+
+
+def _retry_delay(exc: Exception) -> float:
+    """Use the delay the API asked for; it knows when the window reopens."""
+    match = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+(?:\.\d+)?)s", str(exc))
+    return float(match.group(1)) + 1.0 if match else 0.0
+
+
+def _normalize(vector: list[float]) -> list[float]:
+    """gemini-embedding-001 only returns unit vectors at full 3072 dims."""
+    norm = math.sqrt(sum(v * v for v in vector))
+    return [v / norm for v in vector] if norm else vector
+
+
+def embed_batch(client, texts: list[str], limiter: RateLimiter) -> list[list[float]]:
+    from google.genai import types
+
+    for attempt in range(6):
+        limiter.acquire(len(texts))
+        try:
+            result = client.models.embed_content(
+                model=GEMINI_EMBED_MODEL,
+                contents=texts,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT",
+                    output_dimensionality=EMBED_DIMS,
+                ),
+            )
+            return [_normalize(e.values) for e in result.embeddings]
+        except Exception as exc:
+            message = str(exc)
+            if "429" not in message and "RESOURCE_EXHAUSTED" not in message:
+                raise
+            wait = _retry_delay(exc) or min(60.0, 2.0**attempt)
+            print(f"    429 (attempt {attempt + 1}) — waiting {wait:.0f}s")
+            time.sleep(wait)
+    raise RuntimeError("embedding failed after 6 attempts against the rate limit")
+
+
+def embed_all(chunks: list[dict], fingerprint: str, resume: bool) -> list[list[float]]:
+    from google import genai
+
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = BUILD_DIR / "checkpoint.json"
+    partial_path = BUILD_DIR / "vectors.partial.f32"
+
+    done = 0
+    if resume and checkpoint_path.exists():
+        state = json.loads(checkpoint_path.read_text())
+        if state.get("fingerprint") == fingerprint:
+            done = state.get("done", 0)
+            print(f"  resuming at chunk {done:,} of {len(chunks):,}")
+        else:
+            print("  corpus changed since last run — starting over")
+            partial_path.unlink(missing_ok=True)
+    else:
+        partial_path.unlink(missing_ok=True)
+
+    client = genai.Client()
+    limiter = RateLimiter(REQUESTS_PER_MINUTE)
+    started = time.monotonic()
+
+    import numpy as np
+
+    with open(partial_path, "ab") as sink:
+        for start in range(done, len(chunks), BATCH_SIZE):
+            batch = chunks[start : start + BATCH_SIZE]
+            vectors = embed_batch(client, [c["text"] for c in batch], limiter)
+            np.asarray(vectors, dtype=np.float32).tofile(sink)
+            sink.flush()
+
+            finished = start + len(batch)
+            checkpoint_path.write_text(
+                json.dumps(
+                    {
+                        "fingerprint": fingerprint,
+                        "done": finished,
+                        "dims": EMBED_DIMS,
+                        "model": GEMINI_EMBED_MODEL,
+                    }
+                )
+            )
+            elapsed = time.monotonic() - started
+            rate = (finished - done) / elapsed if elapsed > 0 else 0
+            remaining = (len(chunks) - finished) / rate / 60 if rate > 0 else 0
+            print(
+                f"  embedded {finished:,}/{len(chunks):,}"
+                f"  ({remaining:.0f} min remaining)"
+            )
+
+    raw = np.fromfile(partial_path, dtype=np.float32)
+    return raw.reshape(-1, EMBED_DIMS).tolist()
+
+
+# ------------------------------------------------------------------- emitting
+
+
+def emit(chunks: list[dict], vectors: list[list[float]], fingerprint: str) -> None:
+    import numpy as np
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    matrix = np.asarray(vectors, dtype=np.float32).astype(np.float16)
+    (OUT_DIR / "vectors.f16.bin").write_bytes(matrix.tobytes())
+
+    tier_a, tier_b, manifest = [], [], {}
+    for position, chunk in enumerate(chunks):
+        meta = chunk["metadata"]
+        source = meta.get("source", "unknown")
+        entry = {
+            "i": position,
+            "src": source,
+            "file": meta.get("filename", source),
+            "subj": meta.get("subject", ""),
+            "page": meta.get("page_number"),
+            "para": meta.get("paragraph_index"),
+        }
+        if chunk["tier"] == OPEN:
+            entry["text"] = chunk["text"]
+            tier_a.append(entry)
+        else:
+            # No prose leaves this branch — only what makes the chunk findable.
+            entry["terms"] = _keyword_signature(chunk["text"])
+            entry["chars"] = len(chunk["text"])
+            tier_b.append(entry)
+
+        record = manifest.setdefault(
+            source,
+            {
+                "file": entry["file"],
+                "subject": entry["subj"],
+                "tier": chunk["tier"],
+                "chunks": 0,
+            },
+        )
+        record["chunks"] += 1
+
+    for name, payload in (("chunks.a.json.gz", tier_a), ("chunks.b.json.gz", tier_b)):
+        with gzip.open(OUT_DIR / name, "wt", encoding="utf-8") as sink:
+            json.dump(payload, sink, ensure_ascii=False, separators=(",", ":"))
+
+    (OUT_DIR / "meta.json").write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "fingerprint": fingerprint,
+                "embedModel": GEMINI_EMBED_MODEL,
+                "dims": EMBED_DIMS,
+                "count": len(chunks),
+                "openCount": len(tier_a),
+                "restrictedCount": len(tier_b),
+                "builtAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "sources": manifest,
+            },
+            indent=2,
+        )
+    )
+
+    size = sum(f.stat().st_size for f in OUT_DIR.iterdir()) / 1e6
+    print(
+        f"\n  {len(chunks):,} chunks  ·  {len(tier_a):,} open / {len(tier_b):,} restricted"
+        f"\n  {len(manifest)} sources  ·  {size:.1f} MB in {OUT_DIR.relative_to(ROOT)}"
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--limit", type=int, help="only read the first N PDFs")
+    parser.add_argument("--resume", action="store_true", help="continue a partial run")
+    parser.add_argument("--chunks-only", action="store_true", help="skip embedding")
+    args = parser.parse_args()
+
+    print("Collecting chunks…")
+    chunks = collect_chunks(limit=args.limit)
+    if not chunks:
+        raise SystemExit(f"No source material found under {DATA_DIR}")
+    fingerprint = corpus_fingerprint(chunks)
+    open_count = sum(c["tier"] == OPEN for c in chunks)
+    print(
+        f"  {len(chunks):,} chunks  ·  {open_count:,} open"
+        f"  ·  {len(chunks) - open_count:,} restricted  ·  {fingerprint}"
+    )
+    if args.chunks_only:
+        return
+
+    print(f"\nEmbedding with {GEMINI_EMBED_MODEL} at {EMBED_DIMS} dims…")
+    vectors = embed_all(chunks, fingerprint, resume=args.resume)
+    if len(vectors) != len(chunks):
+        raise SystemExit(f"vector/chunk mismatch: {len(vectors)} vs {len(chunks)}")
+
+    print("\nWriting artifacts…")
+    emit(chunks, vectors, fingerprint)
+
+
+if __name__ == "__main__":
+    main()
