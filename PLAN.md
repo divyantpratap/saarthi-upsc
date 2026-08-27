@@ -8,33 +8,41 @@ agent can pick up any unclaimed task without re-deriving context.
 
 ---
 
-## ⛔ Blocked: daily embedding quota exhausted
+## ⛔ Blocked: free-tier embedding quota is an order of magnitude too small
 
-The Tier A embed run is **stopped**, not running. The API returned:
+Two different API keys have now been exhausted. Measured, not estimated: the
+free tier yields roughly **500 embed requests per key per day**, against a Tier A
+corpus of **9,486 chunks**.
 
 ```
-quotaId: EmbedContentRequestsPerDayPerProjectPerModel-FreeTier
+940 vectors cached — 9.9% of Tier A
 ```
 
-That is a **per-day** cap, not per-minute — no amount of pacing or backoff gets
-past it today. An earlier revision of this file blamed a per-minute ceiling;
-that was wrong. `build_index.py` now raises `DailyQuotaExhausted` and exits
-cleanly instead of burning hours in cooldown.
+| Path | Cost | Time |
+|---|---|---|
+| **Billed key** (recommended) | **~$0.36** · 2.4M tokens @ $0.15/1M | ~2 hours |
+| Free tier, whole corpus | free | **~19 days** |
+| Free tier, `--collections constitution` (1,212 chunks) | free | ~2 days |
 
-**To unblock, either:**
-- wait for the reset (00:00 Pacific) and re-run `ingest/build_index.py --only-open`, or
-- point `GEMINI_API_KEY` at a billed project and re-run now.
+This is not a pacing problem, and raising the rate does not help — an earlier
+note in this file suggesting the limit was per-minute was wrong twice over.
+`build_index.py` exits cleanly on `DailyQuotaExhausted`; the content-addressed
+cache means resuming re-embeds nothing.
 
-The SQLite cache contains 190 vectors total, but only 13 match the corrected
-9,486-chunk corpus. They are banked in `ingest/.build/embeddings.sqlite3` and
-will be reused. Duplicate chunks are now reported separately from actual cache
-hits so progress is not overstated again.
+**A second agent cannot work around this.** The limit belongs to the Gemini API
+key, not to whoever runs the script. Codex running `build_index.py` makes the
+same calls against the same key. It only helps if Codex holds a *different* key
+— and then only one process should run at a time, or they contend for the same
+per-minute budget and both stall.
 
-**Note for the next agent:** the Tier A artifact is not coming today unless the
-key is switched. All ten golden queries pass top-three against the corrected
-raw corpus's BM25 ranking. The strict bundled-index assertions correctly wait
-for the rebuilt open index; the current 798-chunk dev artifact contains only
-three open chunks.
+**Corpus breakdown** (Tier A): 8,271 NCERT · 1,212 Constitution · 3 notes.
+
+If staying on the free tier, run the Constitution alone first — it is the single
+highest-value UPSC source and gives article-level citations:
+
+```bash
+.venv/bin/python ingest/build_index.py --only-open --collections constitution
+```
 
 ## Now in progress
 

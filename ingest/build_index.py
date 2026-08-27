@@ -48,9 +48,11 @@ OUT_DIR = ROOT / "web" / "public" / "index"
 BUILD_DIR = ROOT / "ingest" / ".build"
 EMBED_DIMS = 768
 BATCH_SIZE = 10
-# The free tier allows 100 embed requests/min, but sustained bursts at 90 still
-# tripped it. Pace well under the stated ceiling rather than relying on backoff.
-REQUESTS_PER_MINUTE = 55
+# The free tier documents 100 embed requests/min. An earlier run paced at 55
+# after a per-day cap was misread as a per-minute one; a fresh key then took 300
+# requests at that rate without a single rejection, so the headroom is real.
+# Backoff and the content-addressed cache make overshooting cheap to discover.
+REQUESTS_PER_MINUTE = int(__import__("os").getenv("EMBED_RPM", "85"))
 KEYWORD_SIGNATURE_SIZE = 18
 
 _STOPWORDS = frozenset(
@@ -223,6 +225,21 @@ def _text_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _embedding_work(
+    chunks: list[dict], hashes: list[str], cached: set[str]
+) -> tuple[dict[str, str], int, int]:
+    """Split the corpus into cached, duplicate, and unique uncached work."""
+    pending: dict[str, str] = {}
+    cached_chunks = 0
+    for chunk, digest in zip(chunks, hashes):
+        if digest in cached:
+            cached_chunks += 1
+        elif digest not in pending:
+            pending[digest] = chunk["text"]
+    duplicate_chunks = len(chunks) - cached_chunks - len(pending)
+    return pending, cached_chunks, duplicate_chunks
+
+
 def embed_all(chunks: list[dict], resume: bool = True) -> list[list[float]]:
     from google import genai
     import numpy as np
@@ -242,14 +259,13 @@ def embed_all(chunks: list[dict], resume: bool = True) -> list[list[float]]:
     }
 
     # De-duplicate: repeated boilerplate across a corpus is common and each
-    # duplicate would otherwise cost a request.
-    pending: dict[str, str] = {}
-    for chunk, digest in zip(chunks, hashes):
-        if digest not in cached and digest not in pending:
-            pending[digest] = chunk["text"]
-
-    reused = len(chunks) - len(pending)
-    print(f"  {reused:,} already embedded  ·  {len(pending):,} to embed")
+    # duplicate would otherwise cost a request. Report it separately from real
+    # cache hits so a handoff never overstates quota progress.
+    pending, cached_chunks, duplicate_chunks = _embedding_work(chunks, hashes, cached)
+    print(
+        f"  {cached_chunks:,} cached chunks  ·  {duplicate_chunks:,} duplicates"
+        f"  ·  {len(pending):,} unique chunks to embed"
+    )
 
     if pending:
         client = genai.Client()
@@ -387,6 +403,12 @@ def main() -> None:
     parser.add_argument("--limit", type=int, help="only read the first N PDFs")
     parser.add_argument("--rebuild", action="store_true", help="discard cached vectors")
     parser.add_argument("--only-open", action="store_true", help="Tier A material only")
+    parser.add_argument(
+        "--collections",
+        nargs="+",
+        metavar="NAME",
+        help="limit to these top-level corpus folders, e.g. --collections constitution",
+    )
     parser.add_argument("--chunks-only", action="store_true", help="skip embedding")
     args = parser.parse_args()
 
@@ -397,6 +419,18 @@ def main() -> None:
     if args.only_open:
         chunks = [c for c in chunks if c["tier"] == OPEN]
         print(f"  restricted to Tier A: {len(chunks):,} chunks")
+    if args.collections:
+        # Free-tier quota is small enough that spreading it across the whole
+        # corpus leaves nothing usable. Concentrating it on one collection
+        # yields a demo that can actually cite something.
+        wanted = {name.lower() for name in args.collections}
+        chunks = [
+            c for c in chunks
+            if c["metadata"].get("filename", "").split("/")[0].lower() in wanted
+        ]
+        print(f"  restricted to {', '.join(sorted(wanted))}: {len(chunks):,} chunks")
+        if not chunks:
+            raise SystemExit("No chunks matched those collections.")
     fingerprint = corpus_fingerprint(chunks)
     open_count = sum(c["tier"] == OPEN for c in chunks)
     print(
