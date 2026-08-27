@@ -10,8 +10,9 @@ import {
   generateStream,
   PartialAnswer,
 } from "@/lib/gemini";
-import { loadIndex } from "@/lib/index-store";
+import { hasSemanticIndex, loadIndex } from "@/lib/index-store";
 import { buildPrompt, formatHistory, SYSTEM_INSTRUCTION } from "@/lib/prompt";
+import { limitSharedKeyRequest } from "@/lib/rate-limit";
 import { formatContext, retrieve } from "@/lib/retrieve";
 import { routeQuestion } from "@/lib/router";
 import type { OpenChunk, Retrieved, StudyMode } from "@/lib/types";
@@ -72,6 +73,15 @@ function citation(hit: Retrieved) {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as AskBody;
+  const limited = limitSharedKeyRequest(
+    request,
+    "ask",
+    20,
+    10 * 60 * 1000,
+    body.apiKey,
+  );
+  if (limited) return limited;
+
   const question = (body.question ?? "").trim();
   const mode: StudyMode = body.mode ?? "Learn";
 
@@ -92,10 +102,14 @@ export async function POST(request: Request) {
         // A failed query embedding degrades to lexical-only retrieval rather
         // than failing the request — BM25 alone still finds real passages.
         let queryVector: Float32Array | undefined;
-        try {
-          queryVector = await embedQuery(question, body.apiKey);
-        } catch (error) {
-          if (!(error instanceof GeminiError)) throw error;
+        if (hasSemanticIndex(meta)) {
+          try {
+            queryVector = await embedQuery(question, body.apiKey);
+          } catch (error) {
+            if (!(error instanceof GeminiError)) throw error;
+            send({ type: "notice", value: "keyword-only retrieval" });
+          }
+        } else {
           send({ type: "notice", value: "keyword-only retrieval" });
         }
 

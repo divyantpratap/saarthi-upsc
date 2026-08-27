@@ -8,7 +8,9 @@
 import { Type } from "@google/genai";
 
 import { embedQuery, generateJson, GeminiError } from "@/lib/gemini";
+import { hasSemanticIndex, loadIndex } from "@/lib/index-store";
 import { fallbackQuestions } from "@/lib/question-bank";
+import { limitSharedKeyRequest } from "@/lib/rate-limit";
 import { formatContext, retrieve } from "@/lib/retrieve";
 import type { Mcq } from "@/lib/types";
 
@@ -69,15 +71,27 @@ export async function POST(request: Request) {
     count?: number;
     apiKey?: string;
   };
+  const limited = limitSharedKeyRequest(
+    request,
+    "drill",
+    10,
+    10 * 60 * 1000,
+    body.apiKey,
+  );
+  if (limited) return limited;
+
   const topic = (body.topic ?? "").trim() || "Indian Polity";
   const count = Math.min(Math.max(body.count ?? 5, 1), 10);
 
   try {
     let queryVector: Float32Array | undefined;
-    try {
-      queryVector = await embedQuery(topic, body.apiKey);
-    } catch {
-      // Lexical-only retrieval still grounds the questions.
+    const { meta } = await loadIndex();
+    if (hasSemanticIndex(meta)) {
+      try {
+        queryVector = await embedQuery(topic, body.apiKey);
+      } catch {
+        // Lexical-only retrieval still grounds the questions.
+      }
     }
     const hits = await retrieve(topic, { topK: 6, queryVector });
     const context = formatContext(hits, 9000);
