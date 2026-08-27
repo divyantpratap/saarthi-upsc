@@ -142,14 +142,80 @@ redeploys automatically — no Vercel action needed from you.
 3. **Deploy to Vercel** — project from `web/`, env vars per below, confirm a
    cold start answers with zero indexing embed calls.
 
-## Upcoming
+## Backlog — unclaimed, ordered by value
 
-4. **Tier B backfill** — 16,342 restricted chunks, another ~5h of embedding.
-   Adds citation-only coverage of the 63 commercial titles. Not blocking.
-5. **Custom mock tests in the UI** — issue (xi), second half. Same IndexedDB
-   store as uploads.
-6. **Retire Streamlit** — move `app.py` / `pages/` to a `streamlit-legacy`
-   branch and delete from `main`.
+Each item is self-contained. Claim one by adding a row to **Now in progress**.
+
+### B1 · Guard the public endpoints against abuse — *highest value*
+
+`/api/ask` and `/api/drill` are public, unauthenticated, and spend a shared
+Gemini key. One person looping requests exhausts the daily quota and takes the
+app down for everyone; today's outage showed how little headroom there is.
+
+Add a lightweight per-IP token bucket (client IP is in the `x-forwarded-for`
+header on Vercel). In-memory per lambda is imperfect but enough to stop casual
+abuse — no external store. Suggested: 20 requests / 10 min for `/api/ask`, 10
+for `/api/drill`. Return 429 with a plain message the UI can render, and exempt
+requests that carry a caller's own key (`body.apiKey`), since those spend the
+visitor's quota rather than ours.
+
+### B2 · Test the reliability layer
+
+`web/lib/gemini.ts` broke in production four separate ways today and none of it
+is covered. Everything below is unit-testable with a stubbed `GoogleGenAI`:
+
+- `isOverloaded` classifies 500/502/503/504, `UNAVAILABLE`, `DEADLINE_EXCEEDED`,
+  and the bare `TypeError: terminated` that undici raises on a dropped socket.
+  That last one shipped as fatal and skipped failover entirely.
+- `modelChain` de-duplicates, drops blanks, and throws when nothing is usable.
+- `generateStream` buffers to `COMMIT_THRESHOLD` before yielding; a failure
+  below it fails over silently, above it calls `onRestart` while another model
+  remains, and raises `PartialAnswer` on the last rung.
+- `generateJson` respects `JSON_DEADLINE_MS` and skips a model with under
+  `MIN_ATTEMPT_MS` left.
+
+### B3 · Retire Streamlit from `main`
+
+Move `app.py`, `pages/`, `settings.py` and the Streamlit-only bits of `src/` to
+a `streamlit-legacy` branch, then delete from `main`.
+
+Delete the root `.env.example`, `requirements.txt`, `Procfile`, `railway.toml`
+and `Dockerfile` as part of this. They are why Vercel's import wizard detected
+the project as **Python** and offered eight bogus environment variables scraped
+from `.env.example` — one of which (`GEMINI_MODEL=""`) caused the first
+production outage. Keep `ingest/requirements.txt` for the offline pipeline.
+
+### B4 · Custom mock tests in the UI
+
+Issue (xi), second half. `/mock` currently serves only the built-in bank. Add
+creation of a custom test that persists to the same IndexedDB store as uploads
+(`web/lib/local-library.ts`) — a new object store, same DB. Reuse `QuizCard` as
+is; it is already self-contained per question.
+
+### B5 · Tier B backfill
+
+16,342 restricted chunks, roughly 5h of embedding, now viable on the working
+key. `ingest/build_index.py` with no `--only-open`. Gives citation-only coverage
+of the 63 commercial titles. Independent of everything else; the cache is
+content-addressed so Tier A vectors are reused.
+
+### B6 · Responsive and accessibility pass
+
+The UI was built and verified at 1440×900 only. Needs checking at 375px and
+768px — particularly the sidebar overlay behaviour below the 900px breakpoint in
+`AppShell.tsx`, and the drill's option rows.
+
+Accessibility on `QuizCard.tsx`: the verdict after "Check answer" is announced
+to nobody — it needs `aria-live`. Also confirm the option rows are reachable and
+selectable by keyboard, and that focus is visible throughout.
+
+### B7 · Report the model that actually answers
+
+`/api/status` returns `answerModel: MODEL` — the *configured* primary. Since
+`gemini-3.7-flash` is currently failing nearly every request and answers come
+from `gemini-3.6-flash`, the sidebar badge states something untrue. Either
+report the last model that successfully served, or label it "configured" and let
+the per-answer attribution (already correct) stand alone.
 
 ---
 
