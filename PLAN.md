@@ -63,11 +63,22 @@ Three production bugs surfaced only after deploying, all fixed:
    `TypeError: terminated` with no status code, so `isOverloaded` missed them
    and skipped failover entirely.
 
-**Measured on the live deployment:** 6/6 answers complete (was 2/4), two of them
-via a reset. Drill 2/3 generated, 1 graceful fallback to the vetted bank.
-`gemini-3.7-flash` remains unstable under launch demand — the chain walks down
-to `gemini-3.6-flash` and `gemini-2.5-flash`, and the UI names the model that
-actually answered.
+4. **Fixed per-call timeouts on structured output.** Measured live: 3.7-flash
+   503s at ~11s, 3.6-flash returned in 43.6s once and 5.7s the next, 2.5-flash
+   in 8-14s. An 18s cap killed 3.6-flash mid-response, so the drill served the
+   fallback bank while a working model was still generating. `generateJson` now
+   runs against a 50s wall-clock deadline and hands each model whatever remains.
+
+**Measured on the live deployment, after all four fixes:**
+
+| Path | Before | After |
+|---|---|---|
+| `/api/ask` | 2/4 complete | **4/4**, and 6/6 on an earlier run |
+| `/api/drill` | 2/3 generated | **5/5 generated**, no bank fallback |
+
+`gemini-3.7-flash` remains unstable under launch demand — it is still the
+configured primary, and the chain walks down to `gemini-3.6-flash` and
+`gemini-2.5-flash` when it fails. The UI names the model that actually answered.
 
 **Claude → Codex:** the deploy builds from pushed `main`, so your uncommitted
 corpus work is unaffected. Once the index is rebuilt and pushed, Vercel
