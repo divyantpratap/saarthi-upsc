@@ -1,79 +1,46 @@
 # Saarthi
 
-A study assistant for UPSC aspirants that answers from real source material instead of guessing. Ask a question and it pulls the relevant passages from a study library, then writes a grounded answer in the mode you need (Learn, Prelims, Mains, or Evaluate).
+Saarthi is a source-grounded UPSC study assistant. The Next.js app retrieves
+from a prebuilt hybrid BM25/vector index, streams Gemini answers with citations,
+generates Prelims drills, runs negatively marked mocks, and keeps a reader's
+uploaded PDFs and custom tests private in their browser.
 
-> Live demo: deploy target `https://saarthi-upsc.streamlit.app`
+**Live:** https://saarthi-upsc.vercel.app
 
-## Why I built it
-
-Most study chatbots hallucinate. For exam prep, a confident wrong answer is worse than no answer. Saarthi is built around retrieval so every answer is tied back to the material it came from — routing, hybrid retrieval, context limits, and failure handling included.
-
-## How it works
-
-```
-Question -> Router (heuristic)
-   |- DIRECT  : keyword (BM25) lookup for "what does book X say about Y"
-   |- RAG     : vector search over chunked material in ChromaDB
-   |- HYBRID  : both paths when the question is ambiguous
-```
-
-- **Hybrid retrieval** — keyword for book lookups, vectors for concepts
-- **Grounding** — answers from retrieved passages, not model memory
-- **Study modes** — Learn / Prelims / Mains / Evaluate
-- **Resilience** — retries, context caps, empty-response handling
-
-## Tech
-
-Python · Streamlit · ChromaDB · rank-bm25 · PyMuPDF · BeautifulSoup · Google Gemini (Flash) · Docker · pytest
-
-## Run locally
+## Run the web app
 
 ```bash
-git clone https://github.com/divyantpratap/saarthi-upsc.git
-cd saarthi-upsc
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-cp .env.example .env   # set GEMINI_API_KEY
-
-# optional: build a demo index from bundled public notes
-EMBEDDING_BACKEND=gemini python scripts/build_demo_index.py
-
-streamlit run app.py
+npm ci --prefix web
+npm run dev --prefix web
 ```
 
-## Knowledge base
+Create `web/.env.local` with `GEMINI_API_KEY` and the model settings documented
+in `PLAN.md`. The app reads the committed artifacts under
+`web/public/index/`; it performs no corpus indexing at boot or on Vercel.
 
-Copyrighted study books stay out of the repo. Bring your own PDFs under `data/pdfs/` and run `python scripts/build_all.py`.
+## Build the offline index
 
-The live demo auto-builds a small index from bundled public study notes (`data/sample_study_notes.txt`) using Gemini embeddings on first launch.
-
-## Streamlit Community Cloud
-
-1. Deploy from this repo, main file `app.py`
-2. Secrets (Settings → Secrets):
-
-```toml
-GEMINI_API_KEY = "your_key"
-EMBEDDING_BACKEND = "gemini"
-GEMINI_MODEL = "gemini-2.5-flash"
-```
-
-### API-key safety
-
-- The protected deployment key is stored only in Streamlit secrets.
-- Visitors may optionally enter their own Gemini key in a password-masked field.
-- Visitor keys remain in that Streamlit browser session and are passed directly
-  to the Gemini client; they are never copied into environment variables,
-  written to disk, included in chat history, or logged.
-- **Forget my API key** clears the visitor key from the active session.
-
-## Tests
+Source PDFs remain gitignored. Install the isolated pipeline dependencies, fetch
+the open corpus, and run the resumable builder:
 
 ```bash
-pytest tests/ -q
+python -m venv .venv
+.venv/bin/pip install -r ingest/requirements.txt
+bash ingest/fetch_open_corpus.sh
+.venv/bin/python ingest/build_index.py --only-open
 ```
 
-## License
+Tier A ships quotable prose. Tier B ships only vectors, citations, and keyword
+signatures; restricted prose never enters the repository.
 
-MIT. See [LICENSE](LICENSE).
+## Verify
+
+```bash
+.venv/bin/python -m pytest tests/ -q
+npm run lint --prefix web
+(cd web && npx tsc --noEmit)
+npx vitest run --prefix web
+npm run build --prefix web
+```
+
+MIT licensed. See `LICENSE`.

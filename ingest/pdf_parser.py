@@ -1,12 +1,17 @@
-"""Fast PDF text extraction with PyMuPDF and page limits."""
+"""Fast PDF text extraction with PyMuPDF and page-level citations."""
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import fitz
 
-from settings import MAX_PAGES_FULL, MAX_PAGES_PREVIEW, MIN_CHARS_PER_PDF, PDF_DIR
+from ingest.config import (
+    MAX_PAGES_FULL,
+    MAX_PAGES_PREVIEW,
+    MIN_CHARS_PER_PDF,
+    PDF_DIR,
+)
 
 
 def _guess_subject(filename: str) -> str:
@@ -32,16 +37,17 @@ def _guess_subject(filename: str) -> str:
 
 
 def extract_pdf_text(path: Path, max_pages: int | None = None) -> str:
-    doc = fitz.open(path)
-    limit = min(len(doc), max_pages) if max_pages else len(doc)
-    parts = []
-    for i in range(limit):
-        page = doc.load_page(i)
-        text = page.get_text("text")
-        if text and text.strip():
-            parts.append(text.strip())
-    doc.close()
-    return "\n\n".join(parts)
+    pdf = fitz.open(path)
+    try:
+        limit = min(len(pdf), max_pages) if max_pages else len(pdf)
+        parts = []
+        for page_index in range(limit):
+            text = pdf.load_page(page_index).get_text("text")
+            if text and text.strip():
+                parts.append(text.strip())
+        return "\n\n".join(parts)
+    finally:
+        pdf.close()
 
 
 def list_pdfs(directory: Path | None = None) -> list[Path]:
@@ -75,30 +81,32 @@ def pdf_to_documents(path: Path, max_pages: int | None = MAX_PAGES_FULL) -> list
     documents: list[dict] = []
     try:
         pdf = fitz.open(path)
-        limit = min(len(pdf), max_pages) if max_pages else len(pdf)
         try:
-            display_name = str(path.relative_to(PDF_DIR))
-        except ValueError:
-            display_name = path.name
-        subject = _guess_subject(display_name)
-        for page_index in range(limit):
-            text = pdf.load_page(page_index).get_text("text").strip()
-            if not text:
-                continue
-            documents.append(
-                {
-                    "text": text,
-                    "source": f"pdf:{display_name}",
-                    "metadata": {
-                        "type": "pdf",
-                        "filename": display_name,
-                        "subject": subject,
-                        "page_number": page_index + 1,
-                        "total_pages": len(pdf),
-                    },
-                }
-            )
-        pdf.close()
+            limit = min(len(pdf), max_pages) if max_pages else len(pdf)
+            try:
+                display_name = str(path.relative_to(PDF_DIR))
+            except ValueError:
+                display_name = path.name
+            subject = _guess_subject(display_name)
+            for page_index in range(limit):
+                text = pdf.load_page(page_index).get_text("text").strip()
+                if not text:
+                    continue
+                documents.append(
+                    {
+                        "text": text,
+                        "source": f"pdf:{display_name}",
+                        "metadata": {
+                            "type": "pdf",
+                            "filename": display_name,
+                            "subject": subject,
+                            "page_number": page_index + 1,
+                            "total_pages": len(pdf),
+                        },
+                    }
+                )
+        finally:
+            pdf.close()
     except Exception as exc:
         print(f"  [skip] {path.name}: {exc}")
     return documents

@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.ingest.chunker import chunk_text
+from ingest.chunker import chunk_text
 
 
 def test_chunks_preserve_page_and_paragraph_metadata():

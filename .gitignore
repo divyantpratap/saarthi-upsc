@@ -14,6 +14,7 @@ __pycache__/
 build_rag_log.txt
 chroma_db/
 data/embeddings/
+data/quarantine/
 data/pdfs/
 data/raw/
 data/scraped/

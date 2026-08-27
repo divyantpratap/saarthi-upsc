@@ -7,8 +7,8 @@ at a time.
 """
 from __future__ import annotations
 
-from settings import CHUNK_OVERLAP, CHUNK_SIZE
-from src.ingest.chunker import chunk_text
+from ingest.chunker import chunk_text
+from ingest.config import CHUNK_OVERLAP, CHUNK_SIZE
 
 
 def test_short_text_yields_exactly_one_chunk():

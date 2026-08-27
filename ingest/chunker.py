@@ -1,13 +1,11 @@
-"""Split documents into overlapping chunks for vector search."""
+"""Split documents into overlapping chunks for the shipped index."""
 from __future__ import annotations
 
-from settings import CHUNK_OVERLAP, CHUNK_SIZE
+from ingest.config import CHUNK_OVERLAP, CHUNK_SIZE
 
 
 def chunk_text(text: str, source: str, metadata: dict | None = None) -> list[dict]:
     """Split text into chunks with source metadata."""
-    # Keep paragraph boundaries: they are part of the citation contract shown
-    # to students. Lines inside a paragraph are still normalised for retrieval.
     paragraphs = [" ".join(p.split()) for p in text.split("\n\n") if p.strip()]
     text = "\n\n".join(paragraphs)
     if not text.strip():
@@ -22,12 +20,20 @@ def chunk_text(text: str, source: str, metadata: dict | None = None) -> list[dic
         target_end = min(start + CHUNK_SIZE, len(text))
         end = target_end
         if target_end < len(text):
-            # Search for a boundary only in the back half, so a full stop near
-            # the start of the window can never shrink a chunk to a crumb.
+            # Search only the back half, so an early stop cannot create crumbs.
             floor = start + CHUNK_SIZE // 2
             paragraph_end = text.rfind("\n\n", floor, target_end)
-            sentence_end = max(text.rfind(". ", floor, target_end), text.rfind("? ", floor, target_end))
-            end = paragraph_end if paragraph_end > start else (sentence_end + 1 if sentence_end > start else target_end)
+            sentence_end = max(
+                text.rfind(". ", floor, target_end),
+                text.rfind("? ", floor, target_end),
+            )
+            end = (
+                paragraph_end
+                if paragraph_end > start
+                else sentence_end + 1
+                if sentence_end > start
+                else target_end
+            )
         piece = text[start:end].strip()
         if piece:
             paragraph_index = text[:start].count("\n\n") + 1
@@ -45,7 +51,7 @@ def chunk_text(text: str, source: str, metadata: dict | None = None) -> list[dic
             )
             idx += 1
         if end >= len(text):
-            break  # text consumed; stepping back by the overlap would re-emit its tail
+            break
         start = max(end - CHUNK_OVERLAP, start + 1)
 
     return chunks
@@ -54,12 +60,12 @@ def chunk_text(text: str, source: str, metadata: dict | None = None) -> list[dic
 def chunk_documents(documents: list[dict]) -> list[dict]:
     """Chunk a list of {text, source, metadata?} documents."""
     all_chunks: list[dict] = []
-    for doc in documents:
+    for document in documents:
         all_chunks.extend(
             chunk_text(
-                doc["text"],
-                doc["source"],
-                doc.get("metadata"),
+                document["text"],
+                document["source"],
+                document.get("metadata"),
             )
         )
     return all_chunks
