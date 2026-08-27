@@ -47,8 +47,10 @@ from tiers import OPEN, RESTRICTED, classify  # noqa: E402
 OUT_DIR = ROOT / "web" / "public" / "index"
 BUILD_DIR = ROOT / "ingest" / ".build"
 EMBED_DIMS = 768
-BATCH_SIZE = 20
-REQUESTS_PER_MINUTE = 90  # headroom under the 100/min free-tier ceiling
+BATCH_SIZE = 10
+# The free tier allows 100 embed requests/min, but sustained bursts at 90 still
+# tripped it. Pace well under the stated ceiling rather than relying on backoff.
+REQUESTS_PER_MINUTE = 55
 KEYWORD_SIGNATURE_SIZE = 18
 
 _STOPWORDS = frozenset(
@@ -134,14 +136,20 @@ class RateLimiter:
         self._times: list[float] = []
 
     def acquire(self, count: int) -> None:
-        now = time.monotonic()
-        self._times = [t for t in self._times if now - t < 60.0]
-        if len(self._times) + count > self.per_minute:
-            sleep_for = 60.0 - (now - self._times[0]) + 0.5
-            if sleep_for > 0:
-                print(f"    rate limit: pausing {sleep_for:.0f}s")
-                time.sleep(sleep_for)
-            self._times = []
+        """Block until `count` more requests fit inside the trailing minute.
+
+        The window is never cleared wholesale: dropping the history after a
+        pause made the limiter believe the minute was empty, so it burst
+        straight back into the quota it had just been throttled by.
+        """
+        while True:
+            now = time.monotonic()
+            self._times = [t for t in self._times if now - t < 60.0]
+            if len(self._times) + count <= self.per_minute:
+                break
+            sleep_for = max(0.5, 60.0 - (now - self._times[0]) + 0.5)
+            print(f"    rate limit: pausing {sleep_for:.0f}s", flush=True)
+            time.sleep(sleep_for)
         self._times.extend([time.monotonic()] * count)
 
 
@@ -160,7 +168,7 @@ def _normalize(vector: list[float]) -> list[float]:
 def embed_batch(client, texts: list[str], limiter: RateLimiter) -> list[list[float]]:
     from google.genai import types
 
-    for attempt in range(6):
+    for attempt in range(8):
         limiter.acquire(len(texts))
         try:
             result = client.models.embed_content(
@@ -176,10 +184,10 @@ def embed_batch(client, texts: list[str], limiter: RateLimiter) -> list[list[flo
             message = str(exc)
             if "429" not in message and "RESOURCE_EXHAUSTED" not in message:
                 raise
-            wait = _retry_delay(exc) or min(60.0, 2.0**attempt)
-            print(f"    429 (attempt {attempt + 1}) — waiting {wait:.0f}s")
+            wait = max(_retry_delay(exc), min(120.0, 15.0 * (attempt + 1)))
+            print(f"    429 (attempt {attempt + 1}) — waiting {wait:.0f}s", flush=True)
             time.sleep(wait)
-    raise RuntimeError("embedding failed after 6 attempts against the rate limit")
+    raise RuntimeError("rate limited beyond the batch retry budget")
 
 
 def _cache() -> sqlite3.Connection:
@@ -239,7 +247,20 @@ def embed_all(chunks: list[dict], resume: bool = True) -> list[list[float]]:
 
         for start in range(0, len(items), BATCH_SIZE):
             batch = items[start : start + BATCH_SIZE]
-            vectors = embed_batch(client, [text for _, text in batch], limiter)
+            for cooldown in (300, 600, 900, None):
+                try:
+                    vectors = embed_batch(client, [t for _, t in batch], limiter)
+                    break
+                except RuntimeError:
+                    if cooldown is None:
+                        print(
+                            f"\n  Quota is still saturated. {start:,} of {len(items):,} "
+                            f"embedded and cached — re-run to continue.",
+                            flush=True,
+                        )
+                        raise SystemExit(0)
+                    print(f"    quota saturated — cooling down {cooldown // 60} min", flush=True)
+                    time.sleep(cooldown)
             conn.executemany(
                 "INSERT OR REPLACE INTO vectors (hash, model, dims, vec) VALUES (?,?,?,?)",
                 [
@@ -344,6 +365,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, help="only read the first N PDFs")
     parser.add_argument("--rebuild", action="store_true", help="discard cached vectors")
+    parser.add_argument("--only-open", action="store_true", help="Tier A material only")
     parser.add_argument("--chunks-only", action="store_true", help="skip embedding")
     args = parser.parse_args()
 
@@ -351,6 +373,9 @@ def main() -> None:
     chunks = collect_chunks(limit=args.limit)
     if not chunks:
         raise SystemExit(f"No source material found under {DATA_DIR}")
+    if args.only_open:
+        chunks = [c for c in chunks if c["tier"] == OPEN]
+        print(f"  restricted to Tier A: {len(chunks):,} chunks")
     fingerprint = corpus_fingerprint(chunks)
     open_count = sum(c["tier"] == OPEN for c in chunks)
     print(

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { UploadPanel } from "@/components/UploadPanel";
+
 interface Source {
   key: string;
   file: string;
@@ -70,6 +72,7 @@ export default function LibraryPage() {
             caption="Matched and cited by page, but never reproduced — open your own copy."
             sources={referenceOnly}
           />
+          <UploadPanel />
         </>
       )}
     </div>

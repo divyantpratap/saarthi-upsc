@@ -1,5 +1,6 @@
 "use client";
 
+import { searchLocal } from "./local-library";
 import { readApiKey } from "./use-api-key";
 import type { StudyMode } from "./types";
 
@@ -37,10 +38,20 @@ export async function ask(
   handlers: AskHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
+  // Uploads are only in this browser, so their matches must travel with the
+  // request — the server has no way to reach them.
+  const localMatches = await searchLocal(question).catch(() => []);
+
   const response = await fetch("/api/ask", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ question, mode, history, apiKey: readApiKey() }),
+    body: JSON.stringify({
+      question,
+      mode,
+      history,
+      apiKey: readApiKey(),
+      localMatches,
+    }),
     signal,
   });
 
