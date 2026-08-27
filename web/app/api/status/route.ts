@@ -1,4 +1,4 @@
-import { loadIndex } from "@/lib/index-store";
+import { hasSemanticIndex, loadIndex } from "@/lib/index-store";
 import { MODEL } from "@/lib/gemini";
 
 export const runtime = "nodejs";
@@ -17,11 +17,12 @@ export async function GET() {
       openSources: sources.filter((s) => s.tier === "A").length,
       builtAt: meta.builtAt,
       embedModel: meta.embedModel,
-      answerModel: MODEL,
+      retrievalMode: hasSemanticIndex(meta) ? "hybrid" : "lexical",
+      configuredModel: MODEL,
     });
   } catch (error) {
     return Response.json(
-      { ok: false, error: String(error), answerModel: MODEL },
+      { ok: false, error: String(error), configuredModel: MODEL },
       { status: 503 },
     );
   }

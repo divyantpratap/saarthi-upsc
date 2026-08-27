@@ -45,6 +45,9 @@ export interface IndexMeta {
   fingerprint: string;
   embedModel: string;
   dims: number;
+  /** Dense rows are all-or-nothing; zero means BM25-only retrieval. */
+  vectorCount?: number;
+  retrievalMode?: "lexical" | "hybrid";
   count: number;
   openCount: number;
   restrictedCount: number;

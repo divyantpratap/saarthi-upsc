@@ -1,9 +1,9 @@
 /**
  * Loads the prebuilt index off disk, once per lambda.
  *
- * This is the whole reason the app no longer 429s at boot: the vectors were
- * computed offline and committed, so a cold start reads a file instead of
- * issuing thousands of embed requests.
+ * This is the whole reason the app no longer 429s at boot: every searchable
+ * artifact is computed offline and committed. A lexical build carries no dense
+ * rows; a later hybrid build adds a complete matrix without changing chunks.
  */
 import { readFile } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
@@ -17,7 +17,7 @@ export interface LoadedIndex {
   meta: IndexMeta;
   chunks: Chunk[];
   /** Row-major, `meta.dims` floats per chunk, L2-normalised at build time. */
-  vectors: Float32Array;
+  vectors: Float32Array | null;
 }
 
 /**
@@ -80,11 +80,10 @@ function decodeVectors(buffer: Buffer, expected: number): Float32Array {
 }
 
 async function readIndex(): Promise<LoadedIndex> {
-  const [metaRaw, openRaw, restrictedRaw, vectorRaw] = await Promise.all([
+  const [metaRaw, openRaw, restrictedRaw] = await Promise.all([
     readFile(path.join(INDEX_DIR, "meta.json"), "utf8"),
     readFile(path.join(INDEX_DIR, "chunks.a.json.gz")),
     readFile(path.join(INDEX_DIR, "chunks.b.json.gz")),
-    readFile(path.join(INDEX_DIR, "vectors.f16.bin")),
   ]);
 
   const meta = JSON.parse(metaRaw) as IndexMeta;
@@ -97,8 +96,23 @@ async function readIndex(): Promise<LoadedIndex> {
   const chunks = new Array<Chunk>(meta.count);
   for (const chunk of [...open, ...restricted]) chunks[chunk.i] = chunk;
 
-  const vectors = decodeVectors(vectorRaw, meta.count * meta.dims);
+  const vectorCount = meta.vectorCount ?? meta.count;
+  if (vectorCount !== 0 && vectorCount !== meta.count) {
+    throw new Error(
+      `index corrupt: ${vectorCount} vector rows for ${meta.count} chunks; dense indexes must be complete`,
+    );
+  }
+  const vectors = vectorCount
+    ? decodeVectors(
+        await readFile(path.join(INDEX_DIR, "vectors.f16.bin")),
+        meta.count * meta.dims,
+      )
+    : null;
   return { meta, chunks, vectors };
+}
+
+export function hasSemanticIndex(meta: IndexMeta): boolean {
+  return meta.count > 0 && (meta.vectorCount ?? meta.count) === meta.count;
 }
 
 /** Module-scope so warm invocations reuse the decoded matrix. */

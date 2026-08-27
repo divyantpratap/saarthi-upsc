@@ -72,7 +72,7 @@ export async function retrieve(
   ];
   const similarity = new Map<number, number>();
 
-  if (queryVector) {
+  if (queryVector && vectors) {
     if (queryVector.length !== meta.dims) {
       throw new Error(
         `query vector is ${queryVector.length}-d but the index is ${meta.dims}-d — ` +

@@ -1,5 +1,5 @@
 /**
- * Text splitter, kept in parity with src/ingest/chunker.py.
+ * Text splitter, kept in parity with ingest/chunker.py.
  *
  * Uploaded documents are chunked in the browser with the same sizes and
  * boundary rules the offline pipeline uses, so a passage from your own PDF

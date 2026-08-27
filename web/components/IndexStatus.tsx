@@ -7,7 +7,8 @@ interface Status {
   chunks?: number;
   sources?: number;
   openSources?: number;
-  answerModel?: string;
+  configuredModel?: string;
+  retrievalMode?: "lexical" | "hybrid";
   error?: string;
 }
 
@@ -60,7 +61,14 @@ export function IndexStatus() {
         {status.sources === 1 ? "" : "s"} ·{" "}
         {status.chunks?.toLocaleString()} passages indexed
       </p>
-      <p className="mt-0.5 text-[10.5px] text-faint">{status.answerModel}</p>
+      <p className="mt-0.5 text-[10.5px] text-faint">
+        {status.retrievalMode === "hybrid"
+          ? "Keyword + semantic retrieval"
+          : "Complete keyword index · semantic upgrade pending"}
+      </p>
+      <p className="mt-0.5 text-[10.5px] text-faint">
+        Configured: {status.configuredModel}
+      </p>
     </div>
   );
 }

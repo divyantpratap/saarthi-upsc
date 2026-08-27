@@ -1,12 +1,14 @@
 {
   "version": 1,
-  "fingerprint": "71c03afb905509b8",
+  "fingerprint": "e73f35fe3ee3ad47",
   "embedModel": "gemini-embedding-001",
   "dims": 768,
-  "count": 798,
-  "openCount": 3,
-  "restrictedCount": 795,
-  "builtAt": "2026-08-27T08:04:34Z",
+  "vectorCount": 0,
+  "retrievalMode": "lexical",
+  "count": 9486,
+  "openCount": 9486,
+  "restrictedCount": 0,
+  "builtAt": "2026-08-27T15:28:48Z",
   "sources": {
     "notes:sample_study_notes.txt": {
       "file": "sample_study_notes.txt",
@@ -14,17 +16,1061 @@
       "tier": "A",
       "chunks": 3
     },
-    "pdf:AFCAT/Air Force Common Admission Test by R Gupta.pdf": {
-      "file": "AFCAT/Air Force Common Admission Test by R Gupta.pdf",
-      "subject": "International Relations",
-      "tier": "B",
-      "chunks": 150
+    "pdf:constitution/Constitution_of_India.pdf": {
+      "file": "constitution/Constitution_of_India.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 1212
     },
-    "pdf:AFCAT/Arihant AFCAT (Flying technical & ground).pdf": {
-      "file": "AFCAT/Arihant AFCAT (Flying technical & ground).pdf",
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess101.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess101.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 37
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess102.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess102.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 20
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess103.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess103.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 32
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess104.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess104.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess105.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess105.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 45
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess106.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess106.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 36
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess107.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess107.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 37
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess1a1.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess1a1.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 6
+    },
+    "pdf:ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess1ps.pdf": {
+      "file": "ncert/jess1dd_Social Science_Class_X_Contemporary_India_II/jess1dd/jess1ps.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 24
+    },
+    "pdf:ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess201.pdf": {
+      "file": "ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess201.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess202.pdf": {
+      "file": "ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess202.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 71
+    },
+    "pdf:ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess203.pdf": {
+      "file": "ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess203.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess204.pdf": {
+      "file": "ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess204.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 62
+    },
+    "pdf:ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess205.pdf": {
+      "file": "ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess205.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 55
+    },
+    "pdf:ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess2ps.pdf": {
+      "file": "ncert/jess2dd_Social Science_Class_X_Understanding_Economic_Development/jess2ps.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 39
+    },
+    "pdf:ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess301.pdf": {
+      "file": "ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess301.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 81
+    },
+    "pdf:ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess302.pdf": {
+      "file": "ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess302.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 69
+    },
+    "pdf:ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess303.pdf": {
+      "file": "ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess303.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 79
+    },
+    "pdf:ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess304.pdf": {
+      "file": "ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess304.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 71
+    },
+    "pdf:ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess305.pdf": {
+      "file": "ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess305.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 79
+    },
+    "pdf:ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess3ps.pdf": {
+      "file": "ncert/jess3dd_Social Science_Class_X_India_and_the_Contemporary_World_II/jess3ps.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 27
+    },
+    "pdf:ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess401.pdf": {
+      "file": "ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess401.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 35
+    },
+    "pdf:ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess402.pdf": {
+      "file": "ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess402.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 44
+    },
+    "pdf:ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess403.pdf": {
+      "file": "ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess403.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 45
+    },
+    "pdf:ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess404.pdf": {
+      "file": "ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess404.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 50
+    },
+    "pdf:ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess405.pdf": {
+      "file": "ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess405.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess4ps.pdf": {
+      "file": "ncert/jess4dd_Social Science_Class_X_Democratic_Politics_II/jess4ps.pdf",
+      "subject": "Science & CSAT",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec101.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec101.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 41
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec102.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec102.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 65
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec103.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec103.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 62
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec104.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec104.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 47
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec105.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec105.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec106.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec106.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 65
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec107.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec107.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 54
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec108.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec108.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 53
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec1gl.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec1gl.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 34
+    },
+    "pdf:ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec1ps.pdf": {
+      "file": "ncert/keec1dd_Economy_Class_XI_Indian_Economic_Development/keec1ps.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 35
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy101.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy101.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 14
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy102.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy102.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 32
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy103.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy103.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 38
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy104.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy104.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 51
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy105.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy105.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 31
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy106.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy106.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 73
+    },
+    "pdf:ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy1ps.pdf": {
+      "file": "ncert/kegy1dd_Geography_Class_XI_India_Physical_Environment/kegy1ps.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 23
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy201.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy201.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 35
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy202.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy202.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 19
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy203.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy203.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 31
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy204.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy204.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 31
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy205.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy205.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 44
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy206.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy206.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 55
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy207.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy207.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 12
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy208.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy208.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 27
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy209.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy209.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy210.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy210.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 19
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy211.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy211.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy212.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy212.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 27
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy213.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy213.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 22
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy214.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy214.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 19
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy2gl.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy2gl.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 17
+    },
+    "pdf:ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy2ps.pdf": {
+      "file": "ncert/kegy2dd_Geography_Class_XI_Fundamentals_of_Physical_Geography/kegy2ps.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 21
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs101.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs101.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 76
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs102.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs102.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 151
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs103.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs103.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 20
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs104.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs104.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 57
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs105.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs105.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 54
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs106.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs106.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 86
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs107.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs107.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 109
+    },
+    "pdf:ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs1ps.pdf": {
+      "file": "ncert/kehs1dd_History_Class_XI_Themes_in_World_History/kehs1ps.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 30
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps101.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps101.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 39
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps102.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps102.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 43
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps103.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps103.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 57
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps104.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps104.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 37
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps105.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps105.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 29
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps106.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps106.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 49
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps107.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps107.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 36
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps108.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps108.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 48
+    },
+    "pdf:ncert/keps1dd_Polity_Class_XI_Political_Theory/keps1ps.pdf": {
+      "file": "ncert/keps1dd_Polity_Class_XI_Political_Theory/keps1ps.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 27
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps201.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps201.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 62
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps202.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps202.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 59
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps203.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps203.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 67
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps204.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps204.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 57
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps205.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps205.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 54
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps206.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps206.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 60
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps207.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps207.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 62
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps208.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps208.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 48
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps209.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps209.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 61
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps210.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps210.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 62
+    },
+    "pdf:ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps2ps.pdf": {
+      "file": "ncert/keps2dd_Polity_Class_XI_Indian_Constitution_at_Work/keps2ps.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 30
+    },
+    "pdf:ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy101.pdf": {
+      "file": "ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy101.pdf",
       "subject": "General Studies",
-      "tier": "B",
-      "chunks": 645
+      "tier": "A",
+      "chunks": 71
+    },
+    "pdf:ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy102.pdf": {
+      "file": "ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy102.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 50
+    },
+    "pdf:ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy103.pdf": {
+      "file": "ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy103.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 66
+    },
+    "pdf:ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy104.pdf": {
+      "file": "ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy104.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 62
+    },
+    "pdf:ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy105.pdf": {
+      "file": "ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy105.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 77
+    },
+    "pdf:ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy1ps.pdf": {
+      "file": "ncert/kesy1dd_Society_Class_XI_Introducing_Sociology/kesy1ps.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 20
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec101.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec101.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 29
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec102.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec102.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 105
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec103.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec103.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 60
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec104.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec104.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 46
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec105.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec105.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 71
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec106.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec106.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 49
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec1gl.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec1gl.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 22
+    },
+    "pdf:ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec1ps.pdf": {
+      "file": "ncert/leec1dd_Economy_Class_XII_Introductory_Macroeconomics/leec1ps.pdf",
+      "subject": "Economy",
+      "tier": "A",
+      "chunks": 20
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy101.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy101.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 23
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy102.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy102.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 22
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy103.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy103.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 28
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy104.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy104.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 35
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy105.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy105.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 26
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy106.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy106.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 32
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy107.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy107.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 51
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy108.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy108.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 25
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy1a1.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy1a1.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 7
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy1gl.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy1gl.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 12
+    },
+    "pdf:ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy1ps.pdf": {
+      "file": "ncert/legy1dd_Geography_Class_XII_Fundamentals_of_Human_Geography/legy1dd/legy1ps.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 22
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy201.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy201.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 44
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy202.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy202.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 20
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy203.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy203.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 64
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy204.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy204.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 37
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy205.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy205.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 34
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy206.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy206.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 28
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy207.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy207.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 32
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy208.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy208.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 26
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy209.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy209.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 38
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy2a1.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy2a1.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 24
+    },
+    "pdf:ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy2ps.pdf": {
+      "file": "ncert/legy2dd_Geography_Class_XII_India_People_and_Economy/legy2ps.pdf",
+      "subject": "Geography",
+      "tier": "A",
+      "chunks": 22
+    },
+    "pdf:ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs101.pdf": {
+      "file": "ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs101.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 77
+    },
+    "pdf:ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs102.pdf": {
+      "file": "ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs102.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 78
+    },
+    "pdf:ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs103.pdf": {
+      "file": "ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs103.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 83
+    },
+    "pdf:ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs104.pdf": {
+      "file": "ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs104.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 80
+    },
+    "pdf:ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs1ps.pdf": {
+      "file": "ncert/lehs1dd_History_Class_XII_Themes_in_Indian_History_I/lehs1dd/lehs1ps.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs201.pdf": {
+      "file": "ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs201.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 77
+    },
+    "pdf:ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs202.pdf": {
+      "file": "ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs202.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 92
+    },
+    "pdf:ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs203.pdf": {
+      "file": "ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs203.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 63
+    },
+    "pdf:ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs204.pdf": {
+      "file": "ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs204.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 90
+    },
+    "pdf:ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs2ps.pdf": {
+      "file": "ncert/lehs2dd_History_Class_XII_Themes_in_Indian_History_II/lehs2ps.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 34
+    },
+    "pdf:ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs301.pdf": {
+      "file": "ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs301.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 90
+    },
+    "pdf:ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs302.pdf": {
+      "file": "ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs302.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 84
+    },
+    "pdf:ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs303.pdf": {
+      "file": "ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs303.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 97
+    },
+    "pdf:ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs304.pdf": {
+      "file": "ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs304.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 86
+    },
+    "pdf:ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs3ps.pdf": {
+      "file": "ncert/lehs3dd_History_Class_XII_Themes_in_Indian_History_III/lehs3ps.pdf",
+      "subject": "History",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps101.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps101.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 47
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps102.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps102.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 43
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps103.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps103.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 53
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps104.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps104.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 54
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps105.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps105.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 51
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps106.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps106.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 56
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps107.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps107.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 36
+    },
+    "pdf:ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps1ps.pdf": {
+      "file": "ncert/leps1dd_Polity_Class_XII_Contemporary_World_Politics/leps1ps.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps201.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps201.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 61
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps202.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps202.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps203.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps203.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 28
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps204.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps204.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps205.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps205.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 60
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps206.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps206.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps207.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps207.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 70
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps208.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps208.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 55
+    },
+    "pdf:ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps2ps.pdf": {
+      "file": "ncert/leps2dd_Polity_Class_XII_Politics_in_India_Since_Independence/leps2ps.pdf",
+      "subject": "Polity",
+      "tier": "A",
+      "chunks": 33
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy101.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy101.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 13
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy102.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy102.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 86
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy103.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy103.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 60
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy104.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy104.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 52
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy105.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy105.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 92
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy106.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy106.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 73
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy107.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy107.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 28
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy1gs.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy1gs.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 31
+    },
+    "pdf:ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy1ps.pdf": {
+      "file": "ncert/lesy1dd_Society_Class_XII_Indian_Society/lesy1ps.pdf",
+      "subject": "General Studies",
+      "tier": "A",
+      "chunks": 35
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy201.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy201.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 42
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy202.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy202.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 48
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy203.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy203.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 30
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy204.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy204.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 58
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy205.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy205.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 41
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy206.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy206.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 57
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy207.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy207.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 63
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy208.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy208.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 63
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy2gl.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy2gl.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 9
+    },
+    "pdf:ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy2ps.pdf": {
+      "file": "ncert/lesy2dd_Society_Class_XII_Social_Change_and_Development_in_India/lesy2ps.pdf",
+      "subject": "Social Issues",
+      "tier": "A",
+      "chunks": 25
     }
   }
 }

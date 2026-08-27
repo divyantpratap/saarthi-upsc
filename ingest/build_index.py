@@ -1,7 +1,7 @@
 """Build the shipped retrieval index.
 
 Runs locally, never on Vercel. Walks the corpus, chunks it with the same
-splitter the Streamlit app used, embeds every chunk with Gemini at 768
+splitter shared by the offline pipeline, embeds every chunk with Gemini at 768
 dimensions, and emits artifacts the TypeScript runtime loads directly:
 
     meta.json        dims, model, counts, per-source manifest
@@ -16,6 +16,7 @@ checkpoints after every batch so a crash or a 429 storm never loses work.
     python ingest/build_index.py --limit 40      # quick smoke build
     python ingest/build_index.py                 # full corpus
     python ingest/build_index.py --resume        # continue after interruption
+    python ingest/build_index.py --only-open --lexical-only  # no API calls
 """
 from __future__ import annotations
 
@@ -39,9 +40,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from settings import DATA_DIR, GEMINI_EMBED_MODEL, MAX_PAGES_FULL, PDF_DIR  # noqa: E402
-from src.ingest.chunker import chunk_text  # noqa: E402
-from src.ingest.pdf_parser import list_pdfs, pdf_to_documents  # noqa: E402
+from ingest.chunker import chunk_text  # noqa: E402
+from ingest.config import DATA_DIR, GEMINI_EMBED_MODEL, MAX_PAGES_FULL, PDF_DIR  # noqa: E402
+from ingest.pdf_parser import list_pdfs, pdf_to_documents  # noqa: E402
 from tiers import OPEN, RESTRICTED, classify  # noqa: E402
 
 OUT_DIR = ROOT / "web" / "public" / "index"
@@ -330,13 +331,25 @@ def embed_all(chunks: list[dict], resume: bool = True) -> list[list[float]]:
 # ------------------------------------------------------------------- emitting
 
 
-def emit(chunks: list[dict], vectors: list[list[float]], fingerprint: str) -> None:
-    import numpy as np
-
+def emit(
+    chunks: list[dict],
+    vectors: list[list[float]] | None,
+    fingerprint: str,
+) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    matrix = np.asarray(vectors, dtype=np.float32).astype(np.float16)
-    (OUT_DIR / "vectors.f16.bin").write_bytes(matrix.tobytes())
+    if vectors is None:
+        # Keep the artifact path stable for deploy tooling, but make its lack of
+        # dense rows explicit in metadata. The runtime will not request a query
+        # embedding until a complete matrix exists.
+        (OUT_DIR / "vectors.f16.bin").write_bytes(b"")
+        vector_count = 0
+    else:
+        import numpy as np
+
+        matrix = np.asarray(vectors, dtype=np.float32).astype(np.float16)
+        (OUT_DIR / "vectors.f16.bin").write_bytes(matrix.tobytes())
+        vector_count = len(vectors)
 
     tier_a, tier_b, manifest = [], [], {}
     for position, chunk in enumerate(chunks):
@@ -381,6 +394,8 @@ def emit(chunks: list[dict], vectors: list[list[float]], fingerprint: str) -> No
                 "fingerprint": fingerprint,
                 "embedModel": GEMINI_EMBED_MODEL,
                 "dims": EMBED_DIMS,
+                "vectorCount": vector_count,
+                "retrievalMode": "hybrid" if vector_count else "lexical",
                 "count": len(chunks),
                 "openCount": len(tier_a),
                 "restrictedCount": len(tier_b),
@@ -392,9 +407,13 @@ def emit(chunks: list[dict], vectors: list[list[float]], fingerprint: str) -> No
     )
 
     size = sum(f.stat().st_size for f in OUT_DIR.iterdir()) / 1e6
+    try:
+        display_dir = OUT_DIR.relative_to(ROOT)
+    except ValueError:
+        display_dir = OUT_DIR
     print(
         f"\n  {len(chunks):,} chunks  ·  {len(tier_a):,} open / {len(tier_b):,} restricted"
-        f"\n  {len(manifest)} sources  ·  {size:.1f} MB in {OUT_DIR.relative_to(ROOT)}"
+        f"\n  {len(manifest)} sources  ·  {size:.1f} MB in {display_dir}"
     )
 
 
@@ -410,6 +429,11 @@ def main() -> None:
         help="limit to these top-level corpus folders, e.g. --collections constitution",
     )
     parser.add_argument("--chunks-only", action="store_true", help="skip embedding")
+    parser.add_argument(
+        "--lexical-only",
+        action="store_true",
+        help="emit a complete BM25 index without making embedding API calls",
+    )
     args = parser.parse_args()
 
     print("Collecting chunks…")
@@ -440,10 +464,14 @@ def main() -> None:
     if args.chunks_only:
         return
 
-    print(f"\nEmbedding with {GEMINI_EMBED_MODEL} at {EMBED_DIMS} dims…")
-    vectors = embed_all(chunks, resume=not args.rebuild)
-    if len(vectors) != len(chunks):
-        raise SystemExit(f"vector/chunk mismatch: {len(vectors)} vs {len(chunks)}")
+    if args.lexical_only:
+        print("\nBuilding lexical-only artifacts (zero embedding calls)…")
+        vectors = None
+    else:
+        print(f"\nEmbedding with {GEMINI_EMBED_MODEL} at {EMBED_DIMS} dims…")
+        vectors = embed_all(chunks, resume=not args.rebuild)
+        if len(vectors) != len(chunks):
+            raise SystemExit(f"vector/chunk mismatch: {len(vectors)} vs {len(chunks)}")
 
     print("\nWriting artifacts…")
     emit(chunks, vectors, fingerprint)
