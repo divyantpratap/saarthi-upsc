@@ -5,7 +5,7 @@
 > the repo. Every task is self-contained: file paths, commands and verification
 > are stated inline so none of it needs re-deriving.
 
-**Last updated:** 2026-08-27 20:10 IST
+**Last updated:** 2026-08-27 20:15 IST
 **Live:** https://saarthi-upsc.vercel.app · **Branch:** `main` (auto-deploys)
 **Local:** `npm run dev --prefix web` · **Python:** `.venv/bin/python`
 
@@ -73,10 +73,16 @@ index ships; the PDFs never enter the repo.
 
 ## Now in progress
 
-_Nothing claimed. Add a row here when you start a task._
-
 | Task | Owner | State |
 |---|---|---|
+| T1 · Tier A index | Codex | claimed; quota attempt after safety checks |
+| T2 · Public endpoint rate limits | Codex | implementing |
+| T3 · Reliability tests | Codex | claimed |
+| T4 · Retire Streamlit | Codex | claimed; preserve legacy branch first |
+| T5 · Custom mock tests | Codex | claimed |
+| T6 · Tier B backfill | Codex | claimed; runs only after T1 writer exits |
+| T7 · Responsive + accessibility | Codex | claimed |
+| T8 · Answering-model status | Codex | claimed |
 
 ## Done
 
@@ -195,6 +201,33 @@ report the last model that successfully served, or label it "configured" and let
 the per-answer attribution (already correct) stand alone.
 
 ---
+
+### T9 · CI does not cover the Next.js app at all
+
+`.github/workflows/ci.yml` runs `pytest` and nothing else — zero mentions of
+`web/`. Every regression fixed today (the blank-env-var outage, the mid-stream
+failover, the undici classification) would sail through CI untouched, and once
+T4 retires Streamlit the workflow will be testing almost nothing.
+
+Add a second job for the web app: `npm ci`, `npm run lint`, `npx tsc --noEmit`,
+`npx vitest run`, `npm run build`, with `working-directory: web`. No secrets
+needed — the build makes no Gemini calls.
+
+### T10 · Decide what happens to the Streamlit deployment
+
+`saarthi-upsc.streamlit.app` is still live and serving the old code, with all
+eleven original bugs. Two deployments under near-identical names is a poor look
+if anyone follows a stale link. Either delete the app from Streamlit Community
+Cloud, or leave a one-line notice pointing at the Vercel URL. Pairs with T4.
+
+### Housekeeping, not tasks
+
+- **Rotate the Gemini keys.** One was pasted into a chat transcript, and both
+  sit in local `.env` / `web/.env.local` (gitignored, never committed).
+  https://aistudio.google.com/apikey
+- **Vercel still holds the first key**, whose daily *embed* quota is spent.
+  Query embeddings are one request per question, so semantic retrieval on the
+  live site is verified working — but it is not the key with headroom.
 
 ## Environment
 
