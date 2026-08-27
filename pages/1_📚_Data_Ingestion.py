@@ -7,9 +7,12 @@ from pathlib import Path
 import streamlit as st
 
 from settings import PDF_DIR
+from src.core.secrets import apply_streamlit_secrets
 from src.ingest.build_store import get_chroma_collection, get_collection_count, index_documents
 from src.ingest.pdf_parser import pdf_to_documents
 from src.references.catalog import build_catalog, load_catalog
+
+apply_streamlit_secrets()
 
 st.set_page_config(page_title="Source Library — Saarthi", page_icon="📚", layout="wide")
 st.markdown("""<style>
