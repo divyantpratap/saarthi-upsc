@@ -11,78 +11,39 @@
 
 ---
 
-## Start here
+## Status — everything is deployed
 
-Work the tasks in order. T1 is the only one that unblocks the product; T2–T8 are
-independent and can be done in any order or in parallel.
+All work through T9 is committed and **live** at https://saarthi-upsc.vercel.app,
+verified on production after the push:
 
-| # | Task | Needs Gemini quota? |
-|---|---|---|
-| T1 | Build and commit the Tier A index | **yes** |
-| T2 | Rate-limit the public endpoints | no |
-| T3 | Test the reliability layer | no |
-| T4 | Retire Streamlit from `main` | no |
-| T5 | Custom mock tests in the UI | no |
-| T6 | Tier B backfill | **yes** |
-| T7 | Responsive + accessibility pass | no |
-| T8 | Report the model that actually answers | no |
-
----
-
-## T1 · Build and commit the Tier A index — *unblocks the product*
-
-The local working tree now carries a complete **9,486-passage Tier A lexical
-index** across 177 chapter/PDF sources. It makes zero document- or query-embed
-calls and passes the 10-question golden retrieval gate. The live deployment
-still carries the 798-chunk dev index because the owner requested no push.
-
-**The constraint, measured across two exhausted keys:** the Gemini free tier
-yields roughly **500 embed requests per key per day**. Tier A is **9,486
-chunks**. This is a property of the API key, not of who runs the script — the
-same limit applies to any agent. `ingest/.build/embeddings.sqlite3` now holds
-**950 vectors**. Of those, 773 match the current Tier A corpus (770 Constitution
-+ 3 notes); another 110 current chunks are duplicates and do not need their own
-embed call. Nothing is ever re-embedded.
-
-| Route | Cost | Time |
-|---|---|---|
-| Billed key | ~$0.36 (2.4M tokens @ $0.15/1M) | ~2 hours |
-| Free tier, whole corpus | free | ~19 days |
-| Free tier, Constitution only (1,212 chunks) | free | ~2 days |
-
-```bash
-# Whole Tier A corpus — needs a billed key to finish in one run
-.venv/bin/python ingest/build_index.py --only-open
-
-# Or concentrate a free day's quota on the highest-value source
-.venv/bin/python ingest/build_index.py --only-open --collections constitution
+```
+9,486 chunks · 177 sources · retrievalMode: lexical
 ```
 
-Re-running is always safe and resumes from the cache. On exhaustion the script
-exits 0 with `DailyQuotaExhausted` and a message — that is expected, not a bug.
-The `Finish Saarthi index` thread heartbeat resumes the optional dense-vector
-upgrade daily at 12:40 IST, just after the current Pacific-time quota reset. It
-finishes semantic Tier A before starting Tier B, updates this file after every
-run, and never pushes. The complete lexical artifact stays usable meanwhile.
+An answer to "Explain the basic structure doctrine" now quotes NCERT *Indian
+Constitution at Work* pp. 16, 17 and 19 with the passage text shown — the first
+time the deployed app has cited real study material.
 
-**Completed lexical build:**
+**Verified independently before pushing:** 17 Python tests, 47 Vitest tests,
+10/10 golden retrieval against the real index, clean typecheck, lint and
+production build.
 
-```bash
-.venv/bin/python ingest/build_index.py --only-open --lexical-only
-```
+### What remains
 
-**Dense-upgrade completion checklist:**
-1. Check `web/public/index/meta.json` — `count` should match the run, and `dims`
-   must be `768`.
-2. `npm run test:retrieval --prefix web` — the golden-retrieval harness gates on
-   a real open index and currently skips.
-3. Commit `web/public/index/`. Do not push until the owner requests it.
-4. Confirm live: `curl -s https://saarthi-upsc.vercel.app/api/status` should show
-   the new `chunks` and `openChunks`.
+| # | Task | State |
+|---|---|---|
+| T1 | Semantic vectors for Tier A | 950 of 9,486 cached; lexical retrieval ships meanwhile |
+| T6 | Tier B backfill | not started; needs quota |
+| T10 | Streamlit deployment | app files are gone from `main`; the Streamlit Cloud app will fail its next rebuild and should be deleted |
 
-**Corpus source of truth:** `bash ingest/fetch_open_corpus.sh` re-downloads the
-Constitution and 21 NCERT titles into gitignored `data/pdfs/`. Only the derived
-index ships; the PDFs never enter the repo.
+A scheduled daily job resumes embedding after each quota reset and upgrades
+retrieval from lexical to hybrid in place. Chunks do not change, so it only adds
+the matrix. A billed key finishes it in about two hours for ~$0.36.
+
+**Known retrieval limitation while lexical-only:** BM25 is strong on topical
+language ("basic structure doctrine", "Green Revolution" both land correctly)
+and weak on bare reference lookups like "Article 32", where the query terms
+appear on nearly every page of the Constitution. Semantic vectors fix that case.
 
 ## Now in progress
 
